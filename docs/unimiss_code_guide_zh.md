@@ -519,7 +519,7 @@ pixi run batch-scaling
 
 1. 旧版 `README.md` 的目录、链接和 `pixi` 任务名存在明显失真，不能继续作为仓库总览。
 2. 原来的 `Ours/README.md` 没覆盖当前 CLI 的全部开关，尤其遗漏了 `--use-sep-loss` 和 `lightweight_level=small`。
-3. `Ours/run.py` 中保留了一组与 `common.experiment_utils.py` 重复的 masking helper，当前主流程并不使用它们，属于低风险死代码候选。
+3. `Ours/run.py` 原先保留过一组与 `common.experiment_utils.py` 重复的 masking helper；这部分在本轮整理中已经删除，当前主流程已经统一回到公共工具实现。
 
 ### 尚未发现需要大改的模型逻辑错误
 
@@ -538,7 +538,7 @@ pixi run batch-scaling
 ### 工程层面
 
 - 增加最小化的自动检查，至少覆盖 CLI 参数、输出目录命名和可视化产物存在性。
-- 把 `Ours/run.py` 中重复但未使用的 masking 辅助函数清理掉，避免后续文档和主流程出现双事实源。
+- 补一层面向文档的事实回查，避免 `README`、`Ours/README.md` 和深度解读文档再次偏离真实代码。
 - 给关键实验产物增加更稳定的汇总脚本，而不是只依赖人工读 `metrics_avg.json`。
 
 ### 实验层面

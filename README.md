@@ -18,7 +18,7 @@
 
 - `Baseline/`
   - 8 个 baseline 的可运行脚本：`Brits.py`、`Mean.py`、`Timesnet.py`、`SAITS.py`、`ImputeFormer.py`、`MTSCI.py`、`FGTI.py`、`SPIN.py`
-  - `result_writer.py` 负责生成 baseline 结果摘要 `result.md`
+  - `result_writer.py` 默认把 baseline 汇总结果追加到共享文件 `Baseline/result.md`
 - `Ours/`
   - `run.py` 是 `UniMiss` 的唯一官方实验入口
   - `train.py` 只是兼容包装层，内部直接调用 `Ours.run.main()`
@@ -112,7 +112,7 @@ pixi run batch-supplementary-italy
 
 ### Baseline 输出
 
-baseline 默认把结果写到各自目录，例如：
+baseline 会把按 seed 的指标文件写到各自输出目录，例如：
 
 - `outputs/brits/`
 - `outputs/mean/`
@@ -123,11 +123,14 @@ baseline 默认把结果写到各自目录，例如：
 - `outputs/fgti/`
 - `outputs/spin/`
 
-典型产物：
+这些目录中的典型产物：
 
 - `seed_<seed>/metrics.json`
 - `metrics_avg.json`
-- `result.md`
+
+另外，baseline 的 Markdown 汇总默认不是写在各自 `outputs/<model>/` 目录下，而是由 `Baseline/result_writer.py` 统一追加到共享文件：
+
+- `Baseline/result.md`
 
 ## 5. 如何运行 Ours（UniMiss）
 
