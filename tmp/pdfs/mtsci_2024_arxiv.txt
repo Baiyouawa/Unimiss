@@ -1,0 +1,338 @@
+
+=== PAGE 1 ===
+MTSCI: A Conditional Diffusion Model for Multivariate Time
+Series Consistent Imputation
+Jianping Zhou
+Shanghai Jiao Tong University
+Shanghai, China
+jianpingzhou@sjtu.edu.cn
+Junhao Li
+Shanghai Jiao Tong University
+Shanghai, China
+Lijunhao_hz@sjtu.edu.cn
+Guanjie Zheng∗
+Shanghai Jiao Tong University
+Shanghai, China
+gjzheng@sjtu.edu.cn
+Xinbing Wang
+Shanghai Jiao Tong University
+Shanghai, China
+xwang8@sjtu.edu.cn
+Chenghu Zhou
+Chinese Academy of Sciences
+Beijing, China
+zhouch@Ireis.ac.cn
+ABSTRACT
+Missing values are prevalent in multivariate time series, compro-
+mising the integrity of analyses and degrading the performance of
+downstream tasks. Consequently, research has focused on multivari-
+ate time series imputation, aiming to accurately impute the missing
+values based on available observations. A key research question
+is how to ensure imputation consistency, i.e., intra-consistency be-
+tween observed and imputed values, and inter-consistency between
+adjacent windows after imputation. However, previous methods
+rely solely on the inductive bias of the imputation targets to guide
+the learning process, ignoring imputation consistency and ulti-
+mately resulting in poor performance. Diffusion models, known for
+their powerful generative abilities, prefer to generate consistent re-
+sults based on available observations. Therefore, we propose a con-
+ditional diffusion model for Multivariate Time Series Consistent
+Imputation (MTSCI). Specifically, MTSCI employs a contrastive
+complementary mask to generate dual views during the forward
+noising process. Then, the intra contrastive loss is calculated to
+ensure intra-consistency between the imputed and observed values.
+Meanwhile, MTSCI utilizes a mixup mechanism to incorporate con-
+ditional information from adjacent windows during the denoising
+process, facilitating the inter-consistency between imputed samples.
+Extensive experiments on multiple real-world datasets demonstrate
+that our method achieves the state-of-the-art performance on mul-
+tivariate time series imputation task under different missing scenar-
+ios. Code is available at https://github.com/JeremyChou28/MTSCI.
+CCS CONCEPTS
+•Information systems → Data mining; •Computing method-
+ologies → Artificial intelligence.
+∗Corresponding author
+Permission to make digital or hard copies of all or part of this work for personal or
+classroom use is granted without fee provided that copies are not made or distributed
+for profit or commercial advantage and that copies bear this notice and the full citation
+on the first page. Copyrights for components of this work owned by others than the
+author(s) must be honored. Abstracting with credit is permitted. To copy otherwise, or
+republish, to post on servers or to redistribute to lists, requires prior specific permission
+and/or a fee. Request permissions from permissions@acm.org.
+CIKM ’24, October 21–25, 2024, Boise, ID, USA.
+© 2024 Copyright held by the owner/author(s). Publication rights licensed to ACM.
+ACM ISBN 979-8-4007-0436-9/24/10
+https://doi.org/10.1145/3627673.3679532
+KEYWORDS
+Multivariate Time Series Imputation, Intra consistency, Inter con-
+sistency
+ACM Reference Format:
+Jianping Zhou, Junhao Li, Guanjie Zheng, Xinbing Wang, and Chenghu
+Zhou. 2024. MTSCI: A Conditional Diffusion Model for Multivariate Time
+Series Consistent Imputation. In Proceedings of the 33rd ACM International
+Conference on Information and Knowledge Management (CIKM ’24), October
+21–25, 2024, Boise, ID, USA. ACM, New York, NY, USA, 10 pages. https:
+//doi.org/10.1145/3627673.3679532
+1 INTRODUCTION
+Multivariate time series data widely exists in various real-world ap-
+plications, e.g., transportation [29, 36], meteorology [1, 17], health-
+care [37], energy [2], etc. The integrity of time series plays a crucial
+role on tasks such as forecasting [ 26, 48] and classification [ 22].
+However, missing data is a common issue in real-world datasets
+due to device failures, communication interruptions, and human
+errors [16, 34], which impairs the downstream task performance
+and renders the integrity analysis approaches inapplicable. Conse-
+quently, multivariate time series imputation, which aims to accu-
+rately impute missing values using available observations, arises
+as an important research question.
+Early studies are based on statistical learning [ 4, 13] and ma-
+chine learning methods [20, 40, 46]. Subsequently, numerous deep
+learning-based methods have been proposed. Some approaches [5,
+6, 9, 33] treat the imputation task as a deterministic point estima-
+tion problem, while others [3, 8, 12, 35, 45] view it as a probabilistic
+generative problem. However, these methods rely solely on the
+inductive bias of artificially simulated imputation targets to guide
+the learning process, as illustrated in Figure 1 (a), neglecting the
+crucial aspect of imputation consistency.
+The imputation consistency can be divided into two categories:
+(i)intra-consistency and (ii)inter-consistency. As shown in Fig-
+ure 1 (b), consider two samples of adjacent windows in incom-
+plete time series. Intra-consistency implies that the imputed values,
+guided by observed values, should facilitate the reconstruction of
+observed values, ensuring consistency between imputed and ob-
+served values, thereby reducing imputation bias. Inter-consistency
+means that when imputing a single sample, the sample from the
+adjacent window should be considered to ensure that the complete
+sample maintains temporal consistency with the adjacent window.
+arXiv:2408.05740v1  [cs.LG]  11 Aug 2024
+
+=== PAGE 2 ===
+CIKM ’24, October 21–25, 2024, Boise, ID, USA. Jianping Zhou, Junhao Li, Guanjie Zheng, Xinbing Wang, and Chenghu Zhou
+(a) Previous methods
+Inter Consistency
+Intra Consistency
+(b) Ours
+𝑡 − 𝐿 𝑡 𝑡 − 𝐿 𝑡 𝑡 + 𝐿
+Blue Line: Observed Green Line: ReconstructedOrange Line: Imputed
+Figure 1: (a) Previous methods only use the observed values
+in a single window to impute missing values. (b) Our method
+uses the adjacent window to assist in imputation to maintain
+inter-consistency, and constraints the imputed targets recip-
+rocally reconstruct the observed values for intra-consistency.
+This concept coincides with the idea of good continuity in the
+temporal samples of adjacent windows [37]. However, no existing
+imputation method addresses the issue of imputation consistency
+in multivariate time series imputation task.
+Nowadays, diffusion models exhibit powerful generative abil-
+ities in synthesizing images [ 31], audio [ 7], text [ 14], and time
+series [35]. Compared to other models, diffusion models are more
+inclined to generate data consistent with the distribution of ob-
+served data, which aligns well with the concept of imputation
+consistency [18]. Therefore, to address the aforementioned issues,
+we propose MTSCI, a conditional diffusion model for Multivariate
+Time Series Consistent Imputation. MTSCI employs a contrastive
+complementary mask strategy during the noising process and a
+mixup mechanism that incorporates conditional information from
+adjacent windows, effectively guiding the model to maintain con-
+sistency and improving imputation performance. Specifically, (i)
+the complementary mask strategy, which self-supervises the gen-
+eration of complementary pairs of samples when simulating the
+imputation targets, imposes contrastive loss to teach the model
+to maintain intra-consistency between the observed and imputed
+values. (ii) The mixup mechanism incorporates the temporal char-
+acteristics of the adjacent window as conditional information to
+assist in the imputation of current window during the training
+stage, thus preserving inter-consistency between adjacent windows.
+Experimental results on three real-world datasets demonstrate that
+our method achieves state-of-the-art performance with average
+improvements of 17.88% in MAE, 15.09% in RMSE, and 13.64% in
+MAPE compared to baseline methods.
+In summary, the main contributions of our work are as follows:
+• Motivated by the neglect of imputation consistency in existing
+time series imputation methods, we systematically summarize
+the concept of imputation consistency in multivariate time series
+imputation task as intra-consistency and inter-consistency.
+• We propose MTSCI, a conditional diffusion model for multivari-
+ate time series consistent imputation, incorporating a comple-
+mentary mask strategy and a mixup mechanism to realize intra-
+consistency and inter-consistency.
+• We conduct extensive experiments on multiple real-world
+datasets to demonstrate the effectiveness of MTSCI. The results
+indicate that our method achieves the state-of-the-art perfor-
+mance on multivariate time series imputation task under different
+missing data scenarios.
+2 RELATED WORK
+Existing multivariate time series imputation methods can be divided
+into four categories: statistical-based methods, machine learning-
+based methods, deterministic deep models and probabilistic genera-
+tive models. (i) Statistical methods, such as Mean, Median [13] and
+KNN [4], utilize the statistical indicators to impute missing values.
+(ii) Machine learning methods like linear imputation, state-space
+models [10] and MICE [40] impute missing values based on linear
+dynamics assumptions. Other machine learning methods like low-
+rank matrix factorization, e.g., NMF [20], TRMF [46], TIDER [25],
+factorize incomplete data into low-rank matrices and impute miss-
+ing values using the product of these matrices. However, these
+methods struggle with capturing the nonlinear dynamics and han-
+dling large datasets. (iii) Deterministic deep models treat imputation
+as a deterministic point estimation problem. For instance, GRUD [6]
+uses the last observation and mean of observations to represent
+missing patterns. BRITS [5] employs bidirectional recurrent neural
+networks to capture temporal features. mTAN [33] and SAITS [9]
+design attention mechanisms to capture temporal dependencies.
+TimesNet [42] transforms 1D time series to 2D space to capture com-
+plex temporal variations, achieving state-of-the-art performance in
+multiple time series tasks, including imputation. However, deter-
+ministic methods fall short of modeling imputation uncertainties.
+(iv) Probabilistic generative models view imputation as a missing
+values generation problem. For example, GP-VAE [19] combines
+the VAE [19] and Gaussian process to model incomplete time se-
+ries. GAIN [ 45] uses a GAN [ 15] with a hint mechanism to aid
+imputation. McFlow [30] leverages normalizing flow generative
+models and Monte Carlo sampling for imputation. CSDI [35] and
+MIDM [39] utilize conditional diffusion models to generate missing
+values by treating the observed values as conditional information.
+CSBI [8] employs the Schrödinger bridge algorithm for imputation.
+PriSTI [24] extracts conditional information for spatio-temporal
+imputation using geographic data. However, these methods only
+use the inductive bias on imputation targets to guide the learning
+process, which is insufficient to maintainintra-consistency between
+observed and imputed values within a sequence, as well as inter-
+consistency between imputed sequences.
+Although there are no imputation methods considering the
+imputation consistency, other studies have explored consistency
+strategies in time series analysis. Time series representation meth-
+ods [37, 44] propose a consistency strategy in the sampling process,
+where time segments within adjacent windows exhibit high pat-
+tern consistency, such as consistent trends, periods and amplitudes.
+
+=== PAGE 3 ===
+MTSCI: A Conditional Diffusion Model for Multivariate Time Series Consistent Imputation CIKM ’24, October 21–25, 2024, Boise, ID, USA.
+TS2Vec [47] and TS-TCC [11] utilize data augmentation to generate
+multiple views for contrastive learning, thereby learning consistent
+representations. TF-C [50], CoST [41] consider that sequence depen-
+dencies of a time series remain consistent during transformations
+between the time and frequency domains. However, these methods
+concentrate on complete time series, falling short in addressing
+multivariate time series imputation task.
+3 PRELIMINARIES
+In this section, we define the problem of multivariate time series
+imputation, and then introduce the background of diffusion models
+and conditional diffusion models.
+3.1 Problem Definition
+Definition 1 (Multivariate Time Series.). The multivari-
+ate time series denoted as X ∈ R𝑇 ×𝐶 contains 𝐶 features with length
+𝑇 . The mask matrix denoted as M ∈ { 0, 1}𝑇 ×𝐶 indicates whether
+the values is observed or missing, where M𝑖,𝑗 = 1 indicates X𝑖,𝑗 is
+observed, and M𝑖,𝑗 = 0 indicates X𝑖,𝑗 is missing. Then, the observed
+values in X is denoted as X𝑜 = X ⊙ M, the missing values in X is
+denoted as X𝑚 = X ⊙ ( 1 − M).
+Problem 1 ( Multivariate Time Series Imputation. ).
+Given the multivariate time series X and the mask matrix M ∈
+{0, 1}𝑇 ×𝐶 over 𝑇 time slices, our task of multivariate time series
+imputation is to estimate the missing values or corresponding distribu-
+tions in X. The problem can be formulated as learning a probabilistic
+imputation function 𝑝𝜃 :
+𝑚𝑎𝑥
+𝜃
+𝑝𝜃 (X𝑚 |X𝑜 ), (1)
+where the goal is to approximate the real the conditional distribution
+𝑝𝜃 (X𝑚 |X𝑜 ) or minimize the estimation error on missing positions.
+3.2 Diffusion Models
+A well-known diffusion model is the denoising diffusion proba-
+bilistic model (DDPM) [18], which contains the forward noising
+process and the backward denoising process. During the forward
+noising process, an input x0 is gradually corrupted to a Gaussian
+noise vector, which can be defined by the following Markov chain:
+𝑞(x𝑇 |x0) :=
+𝑇Ö
+𝑘=1
+𝑞(x𝑘 |x𝑘 −1), 𝑞(x𝑘 |x𝑘 −1) := N (
+√︁
+1 − 𝛽𝑘 x𝑘 −1, 𝛽𝑘 I),
+(2)
+where 𝛽𝑘 ∈ [ 0, 1] represents the noise level. Then, sampling of
+x𝑘 can be written as 𝑞(x𝑘 |x0) = N (x𝑘; √ ¯𝛼𝑘 x0, (1 − ¯𝛼I), where
+¯𝛼𝑘 = Î𝑘
+𝑠=1 𝛼𝑠, and 𝛼𝑘 = 1 − 𝛽𝑘. Thus, x𝑘 can be simply obtained
+as:
+x𝑘 =
+√︁
+¯𝛼𝑘 x0 +
+√︁
+1 − ¯𝛼𝑘𝜖, (3)
+where 𝜖 is a Gaussian noise. During the backward denoising pro-
+cess, DDPM considers the following specific parameterization of
+𝑝𝜃 (x𝑘 −1|x𝑘 ):
+𝑝𝜃 (x𝑘 −1|x𝑘 ) = N (x𝑘 −1; 𝜇𝜃 (x𝑘, 𝑘), 𝜎𝜃 (x𝑘, 𝑘)), (4)
+where the variance 𝜎𝜃 (x𝑘, 𝑘) is usually fixed as 𝜎2I and the mean
+𝜇𝜃 (x𝑘, 𝑘) is defined by a denoising network (x𝜃 or 𝜖𝜃 ). For noising
+estimation, the denoising network 𝜖𝜃 predicts the noise, and then
+obtains the mean 𝜇𝜃 (x𝑘, 𝑘):
+𝜇𝜃 (x𝑘, 𝑘) = 1√𝛼𝑘
+x𝑘 − 1 − 𝛼𝑘√1 − ¯𝛼𝑘
+√𝛼𝑘
+𝜖𝜃 (x𝑘, 𝑘). (5)
+The denoising network 𝜖𝜃 is trained by minimizing the loss L𝜖:
+L𝜖 = E𝑘,x0,𝜖 ∥𝜖 − 𝜖𝜃 (x𝑘, 𝑘) ∥2
+2. (6)
+For x0 estimation, the denoising network x𝜃 predicts the value x0,
+and then obtains the mean 𝜇𝜃 (x𝑘, 𝑘):
+𝜇𝜃 (x𝑘, 𝑘) =
+√𝛼𝑘 (1 − ¯𝛼𝑘 −1)
+1 − ¯𝛼𝑘
+x𝑘 +
+√ ¯𝛼𝑘 −1𝛽𝑘
+1 − ¯𝛼𝑘
+x𝜃 (x𝑘, 𝑘). (7)
+The denoising network x𝜃 is trained by minimizing the loss Lx:
+Lx = E𝑘,x0,𝜖 ∥x0 − x𝜃 (x𝑘, 𝑘) ∥2
+2. (8)
+3.3 Conditional Diffusion Models
+The multivariate time series imputation task aims to impute miss-
+ing values X𝑚 ∈ R𝑇 ×𝐶 based on the conditional information of
+observed values X𝑜 ∈ R𝑇 ×𝐶. The forward noising process and back-
+ward denoising process of conditional diffusion model to impute
+missing values are defined as follows:
+𝑝𝜃 (x𝑚
+0 |x𝑜
+0 ) := 𝑝 (x𝑚
+𝑇 )
+𝑇Ö
+𝑘=1
+𝑝𝜃 (x𝑚
+𝑘 −1|x𝑚
+𝑘 , c), x𝑚
+𝑇 ∈ N (0, I), (9)
+𝑝𝜃 (x𝑚
+𝑘 −1|x𝑚
+𝑘 , x𝑜
+0 ) := N (x𝑚
+𝑘 −1; 𝜇𝜃 (x𝑚
+𝑘 , 𝑘|c), 𝜎𝜃 (x𝑚
+𝑘 , 𝑘|c)I), (10)
+where c = F (x𝑜
+0 ) is the conditional information output of the
+conditioning network F . By repeatedly running the denoising step
+in (10) till 𝑘 = 1, the imputed value ˆx𝑚
+0 is obtained.
+4 METHODOLOGY
+In this section, we elaborate on our model, MTSCI, which is de-
+signed to tackle the multivariate time series imputation task. We
+start with an overview of MTSCI in Section 4.1. Then, we intro-
+duce the contrastive consistency on forward noising process in
+Section 4.2. Following that, we explain the consistency-assured
+denoising process in Section 4.3. Finally, we outline the algorithm
+procedures for both the training and inference stages.
+4.1 Overview
+MTSCI is a conditional diffusion model for multivariate time series
+consistent imputation. As shown in Figure 2, the "sampled" window
+𝑥𝑡 −𝐿:𝑡 is sampled for imputation. First, we use contrastive comple-
+mentary mask to generate two views for contrastive consistency on
+noising process. Then, we utilize the intra contrastive module and
+inter-consistency condition network for consistency-assured de-
+noising process, where the intra contrastive module is to calculate
+contrastive loss between two views, ensuring the intra-consistency
+between imputed and observed values. The inter-consistency con-
+dition network is to incorporate the conditional information from
+"context" window for consistency between adjacent windows.

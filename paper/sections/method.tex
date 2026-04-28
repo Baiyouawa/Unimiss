@@ -1,0 +1,65 @@
+\section{Method}
+
+\subsection{Problem Setup}
+Given multivariate time series $\mathbf{X}\in\mathbb{R}^{T\times D}$ and mask $\mathbf{M}\in\{0,1\}^{T\times D}$, where $M_{t,d}=1$ indicates observed entries, the goal is to recover missing entries under MAR, MNAR, and mixed mechanisms. We denote the imputed output as $\hat{\mathbf{X}}$.
+
+\subsection{Overview}
+UniMiss is composed of four parts:
+\begin{equation}
+\hat{\mathbf{X}}=\mathrm{Decoder}\left(\mathbf{Z}_{OO},\mathbf{Z}_{OM},\mathbf{Z}_{MM},\beta_{OM},\beta_{MM}\right).
+\end{equation}
+Here $\mathbf{Z}_{OO}$ is the foundational observed context, $\mathbf{Z}_{OM}$ and $\mathbf{Z}_{MM}$ are branch outputs, and $(\beta_{OM},\beta_{MM})$ are Stage-II gate weights.
+
+\subsection{OO Foundational Context Path}
+We first build stable observed-side context:
+\begin{equation}
+\mathbf{Z}_{OO},\mu,\log\sigma^2=\mathrm{OOEnc}(\mathbf{X},\mathbf{M},\mathbf{E}_{time},\mathbf{E}_{var}).
+\end{equation}
+This path is not responsible for deciding missing-side recovery strategy. Instead, it provides shared context anchor for the two expert branches.
+
+\subsection{OM Interaction-Oriented Expert Branch}
+For each target missing position, OM branch forms an evidence-demand prompt from local mask morphology, neighboring observed statistics, and OO context:
+\begin{equation}
+\mathbf{P}_{OM}=\phi_{OM}(\mathbf{Z}_{OO},\text{local stats},\mathbf{M}).
+\end{equation}
+A router predicts expert weights:
+\begin{equation}
+\mathbf{w}_{OM}=\mathrm{softmax}\left(\mathrm{Router}_{OM}([\mathbf{P}_{OM};\mathbf{Z}_{OO}])\right),
+\end{equation}
+then aggregates temporal-local, cross-variable, and reliability-calibrated observed experts:
+\begin{equation}
+\mathbf{Z}_{OM}=\sum_{k}w_{OM,k}\cdot \mathrm{Expert}^{(k)}_{OM}(\cdot).
+\end{equation}
+
+\subsection{MM Missing-Structure Expert Branch}
+MM branch explicitly models missing-side structure. It constructs prompts from co-missing topology, periodic memory, and extreme-value clues:
+\begin{equation}
+\mathbf{P}_{MM}=\phi_{MM}(\mathbf{Z}_{OO},\mathbf{M},\text{topology},\text{periodic},\text{extreme}).
+\end{equation}
+Then:
+\begin{equation}
+\mathbf{w}_{MM}=\mathrm{softmax}\left(\mathrm{Router}_{MM}([\mathbf{P}_{MM};\mathbf{Z}_{OO}])\right),\quad
+\mathbf{Z}_{MM}=\sum_{j}w_{MM,j}\cdot \mathrm{Expert}^{(j)}_{MM}(\cdot).
+\end{equation}
+This explicit branch separates missing-structure modeling from observed-only interaction.
+
+\subsection{Stage-II Mechanism-Aware MAR-vs-MNAR Soft Gate}
+Instead of fixed branch fusion, UniMiss uses a mechanism-aware gate:
+\begin{equation}
+\mathbf{P}_{G}=\phi_G(\mathbf{P}_{MM}, s_{local}, s_{global}),
+\end{equation}
+\begin{equation}
+[\beta_{OM},\beta_{MM}]=\mathrm{softmax}\left(\mathrm{Gate}(\mathbf{P}_{G})\right).
+\end{equation}
+$s_{local}$ and $s_{global}$ summarize local and global missingness. In mixed scenarios, this gate allows MAR-like positions to rely more on OM and MNAR-like positions to rely more on MM.
+
+\subsection{Training Objective}
+The objective follows the local draft decomposition:
+\begin{equation}
+\mathcal{L}=\mathcal{L}_{rec}+\lambda_{sep}\mathcal{L}_{sep}+\lambda_{gate}\mathcal{L}_{gate},
+\end{equation}
+where $\mathcal{L}_{rec}$ is reconstruction loss on evaluation mask, $\mathcal{L}_{sep}$ enforces branch decoupling, and $\mathcal{L}_{gate}$ regularizes mechanism-aware gating behavior.
+
+\subsection{Switchable Ablation Design}
+Implementation exposes direct switches for:
+\textit{w/o OO}, \textit{w/o OM}, \textit{w/o MM}, \textit{w/o Stage-II gate}, and finer controls for topology/periodic/extreme prompts and local/global summaries. This ensures one code path supports both full model and all required ablations.

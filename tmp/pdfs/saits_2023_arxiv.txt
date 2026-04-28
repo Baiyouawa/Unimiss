@@ -1,0 +1,170 @@
+
+=== PAGE 1 ===
+SAITS: S ELF -ATTENTION -BASED IMPUTATION FOR TIME
+SERIES ∗
+A PREPRINT
+Wenjie Du †
+Concordia University
+Montréal, Canada
+wenjay.du@gmail.com
+David Cote
+Ciena Corporation
+Ottawa, Canada
+dcote@ciena.com
+Yan Liu
+Concordia University
+Montréal, Canada
+yan.liu@concordia.ca
+July 6, 2023
+ABSTRACT
+Missing data in time series is a pervasive problem that puts obstacles in the way of advanced analysis.
+A popular solution is imputation, where the fundamental challenge is to determine what values should
+be filled in. This paper proposes SAITS, a novel method based on the self-attention mechanism for
+missing value imputation in multivariate time series. Trained by a joint-optimization approach, SAITS
+learns missing values from a weighted combination of two diagonally-masked self-attention (DMSA)
+blocks. DMSA explicitly captures both the temporal dependencies and feature correlations between
+time steps, which improves imputation accuracy and training speed. Meanwhile, the weighted-
+combination design enables SAITS to dynamically assign weights to the learned representations
+from two DMSA blocks according to the attention map and the missingness information. Extensive
+experiments quantitatively and qualitatively demonstrate that SAITS outperforms the state-of-the-art
+methods on the time-series imputation task efficiently and reveal SAITS’ potential to improve the
+learning performance of pattern recognition models on incomplete time-series data from the real
+world. The code is open source on GitHub at https://github.com/WenjieDu/SAITS.
+Keywords Time Series · Missing Values · Imputation Model · Self-Attention · Neural Network
+1 Introduction
+Multivariate time-series data is ubiquitous in many application domains, for instance, transportation, economics,
+healthcare, and meteorology. State-of-the-art (SOTA) pattern recognition methods can well handle various time-
+series analysis tasks on complete datasets. However, due to all kinds of reasons, including failure of collection
+sensors, communication error, and unexpected malfunction, missing values are common to see in time series from the
+real-world environment, for example, patient health measurement [1], air-quality monitoring [2], telecommunication
+networking [3], and educational systems [4]. They impair the interpretability of data and pose challenges for advanced
+analysis and pattern recognition tasks, for instance, classification and clustering. To learn with such incomplete time
+series, thinking ahead of how to deal with missing parts before modeling is an inevitable step.
+Traditional missing value processing methods fall into two categories. One is deletion, which removes samples
+or features that are partially observed. However, deletion makes data incomplete and can yield biased parameter
+estimates [5]. The other one is data imputation that estimates missing data from observed values [6]. There are two main
+advantages to imputation over deletion [7]: (1). Deletion introduces bias, while correctly specified imputation estimates
+are unbiased [8]; (2). Partially observed data may still be informative and helpful to the analysis. Nevertheless, the
+problem of imputation is what values should be filled in. Amounts of prior work are proposed to solve this problem with
+statistics and machine learning methods [9, 10, 11, 12, 13, 14, 15]. However, most of them require strong assumptions
+on missing data [16], for example, linear regression [10], mean/median averaging and k-nearest neighbors [11]. Such
+∗Published in the journal Expert Systems with Applications. Its DOI link:https://doi.org/10.1016/j.eswa.2023.119619
+†Work was done during a machine-learning research internship at Ciena, co-funded by Mitacs.
+arXiv:2202.08516v5  [cs.LG]  5 Jul 2023
+
+=== PAGE 2 ===
+A PREPRINT - J ULY 6, 2023
+assumptions may introduce a strong bias that influences the outcome of the analysis. Recently, much literature utilizes
+deep learning to solve this imputation problem and achieves SOTA results. Non-time series imputation models, which
+are not in the scope of this paper, can be referred to [ 17, 18, 19, 20, 21, 22, 23, 24]. A more detailed description of
+time-series imputation models is presented in Section 2, including [16, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34].
+Missing values can be characterized into three types: (1). Missing completely at random (MCAR), missing values are
+independent of any other values; (2). Missing at random (MAR), missing values depend only on observed values; (3).
+Missing not at random (MNAR), missing values depend on both observed and unobserved values [35, 36]. This work
+focuses on the MCAR case, as is standard in most of literature in the field of imputation. We uniformly sample values
+to be missing independently and introduce them as artificial missingness to evaluate all imputation methods used in this
+paper.
+The self-attention mechanism is now widely applied, whereas its application on time-series imputation is still limited.
+Previous SOTA time-series imputation models are mostly based on recurrent neural networks (RNN), such as [ 16,
+25, 27, 28, 26]. Among them, the methods [ 16, 25, 27, 28] are autoregressive models that are highly susceptible to
+compounding errors [37, 26]. Although the work [26] is not autoregressive, the multi-resolution imputation algorithm it
+proposed is made up of a loop, which can greatly slow the imputation speed. The self-attention mechanism, which is
+non-autoregressive and can overcome RNNs’ drawbacks of slow speed and memory constraints, can avoid compounding
+error and be helpful to achieve better imputation quality and faster speed. This paper proposes a novel model called
+SAITS (Self-Attention-based Imputation for Time Series) to learn missing values by a joint-optimization training
+approach of imputation and reconstruction. Particularly, our contributions in this work are summarized as the following:
+I. We design a joint-optimization training approach of imputation and reconstruction for self-attention models
+to perform missing value imputation for multivariate time series. Transformer trained by this approach
+outperforms SOTA methods.
+II. We design a model called SAITS that consists of a weighted combination of two diagonally-masked self-
+attention (DMSA) blocks, which emancipates SAITS from RNN and enables it to capture temporal dependen-
+cies and feature correlations between time steps explicitly.
+III. We conduct adequate experiments and ablation studies on four real-world public datasets to quantitatively
+and qualitatively evaluate our methodology and justify its design. The experimental results do not only prove
+that SAITS achieves the new SOTA position for the imputation accuracy, but also show SAITS’ potential of
+facilitating pattern recognition models to learn with partially-observed time series from the real world.
+The rest of this work is organized as follows: Section 2 reviews the related literature. Section 3 introduces our
+joint-optimization training approach and the SAITS model. Experiments and conclusions are presented in Section 4
+and 5, respectively.
+2 Related Work
+We review the prior related work of time-series imputation in the following four categories:
+RNN-based Che et al. [38] propose GRU-D, a gated recurrent unit (GRU) variant, to handle missing data in time
+series classification problems. The concept of time decay on the last observation is firstly proposed by [ 38] and
+continues to be used in [16, 25, 27, 28]. M-RNN [25] and BRITS [16] impute missing values according to hidden states
+from bidirectional RNN. However, M-RNN treats missing values as constants, while BRITS treats missing values as
+variables of the RNN graph. Furthermore, BRITS takes correlations among features into consideration while M-RNN
+does not.
+GAN-based Models in [ 27, 28, 26] are also RNN-based. However, due to they adopt the generative adversarial
+network (GAN) structure, they are listed separately as GAN-based. Luo et al. [27] propose GRUI (GRU for Imputation)
+to model temporal information of incomplete time series. Both the generator and the discriminator in their GAN
+model are based on GRUI. Moreover, based on [27], Luo et al. [28] propose E2GAN, which is an end-to-end method,
+comparing to the method in [ 27] having two stages. E 2GAN adopts an auto-encoder based on GRUI to form its
+generator to ease the difficulty of model training and improve imputation performance. Liu et al. [ 26] propose a
+non-autoregressive model called NAOMI for spatiotemporal sequence imputation, which consists of a bidirectional
+encoder and a multiresolution decoder. NAOMI is further enhanced by adversarial training.
+All the above RNN-based imputation models are susceptible to the recurrent network structure. They are time-consuming
+and have memory constraints, which make it hard for them to handle long-term dependency in time series, especially
+when the number of time steps in data samples is big. Apart from these disadvantages, most of these models are
+autoregressive that leads to the problem which is called compounding error in the field of time-series analysis [ 37].
+2
+
+=== PAGE 3 ===
+A PREPRINT - J ULY 6, 2023
+Although NAOMI alleviates this problem, its imputation algorithm consists of a loop, which can greatly slow the
+imputation speed together with its RNN structure. In addition, RNN models are usually unidirectional [ 38, 27, 28].
+Even the models in [16, 25, 26] leverage bidirectional RNN to further improve the performance. Their final imputation
+results come from the average of two RNN models working on two directions (forward and backward) separately. As a
+result, these models are not deeply bidirectional [39].
+V AE-based Inspired by GPPV AE [40] and the non-time-series imputation model HI-V AE [22], Fortuin et al. [29]
+propose GP-V AE, a variational auto-encoder (V AE) architecture for time series imputation with a Gaussian process
+(GP) prior in the latent space. The GP-prior is used to help embed the data into a smoother and more explainable
+representation. L-V AE [30] uses an additive multi-output GP-prior to accommodate auxiliary covariate information other
+than time. To support sparse GP approximations based on inducing points and handle missing values in spatiotemporal
+datasets, Ashman et al. [31] propose SGP-V AE.
+The GAN-based and V AE-based models are all generative ones, and they are difficult to train [23]. Particularly, GAN
+models suffer from the problems of non-convergence and mode collapse due to their loss formulation [41]. V AE models
+tend to involve latent variables used in the sampling and imputation, while they often do not correspond to concrete
+structures or distributions of the data, and this can make it difficult to interpret the imputation process for further
+understanding [23].
+Self-Attention-based Ma et al. [32] apply cross-dimensional self-attention (CDSA) jointly from three dimensions
+(time, location, and measurement) to impute missing values in geo-tagged data, namely spatiotemporal datasets. Bansal
+et al. [33] propose DeepMVI for missing value imputation in multidimensional time-series data. Their model includes a
+Transformer with a convolutional window feature and a kernel regression. Shan et al. [34] propose NRTSI, a time-series
+imputation approach treating time series as a set of (time, data) tuples. Such a design makes NRTSI applicable to
+irregularly-sampled time series. The method directly uses a Transformer encoder for modeling and achieves SOTA
+performance in their work. Such above prior literature explores applying self-attention in the field of time-series
+imputation. However, CDSA [32] is specifically designed for spatiotemporal data rather than general time series, and
+both CDSA and DeepMVI [ 33] are not open-source, which makes it hard for other researchers to reproduce their
+methods and results. Regarding NRTSI [ 34], its algorithm design consists of two nested loops, which weaken the
+advantage of self-attention that is parallelly computational. Even worse, such loops can lead NRTSI to slow processing.
+Related work of self-attention-based models for time-series imputation is not much. There are some non-time series
+imputation models based on self-attention, such as AimNet [23] and MAIN [24].
+3 Methodology
+Our methodology is made up of two parts: (1). the joint-optimization training approach of imputation and reconstruction;
+(2). the SAITS model, a weighted combination of two DMSA blocks.
+3.1 Joint-optimization Training Approach
+A general illustration of the joint-optimization approach is shown in Figure 1. We are going to first give the definition
+of multivariate time series bearing missing data, then introduce the two learning objectives in detail.
+3.1.1 Definition of Multivariate Time-Series with Missing Values
+Given a collection of multivariate time series with T time steps and D dimensions, it is denoted as X =
+{x1, x2, ..., xt, ..., xT } ∈ RT ×D, where the t-th step xt = {x1
+t , x2
+t , ..., xd
+t , ..., xD
+t } ∈ R1×D and each value in it
+could be missing. Accordingly, X d
+t represents the d-th dimension variable of the t-th step in X. To represent the
+missing variables in X, the missing mask vector M ∈ RT ×D is introduced, where
+M d
+t =
+
+1 if X d
+t is observed
+0 if X d
+t is missing
+3.1.2 Two Learning Tasks
+To well train self-attention-based imputation models on the above defined multivariate time series with missing values,
+a joint-optimization training approach of imputation and reconstruction is designed. Here "imputation" is defined as the
+process in which the model fills the missing part in the given samples from null, and "reconstruction" means the model
+restores the observed values as exactly as possible after its processing. This joint-optimization approach consists of
+3

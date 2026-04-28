@@ -1,0 +1,165 @@
+
+=== PAGE 1 ===
+Learning to Reconstruct Missing Data from
+Spatiotemporal Graphs with Sparse Observations
+Ivan Marisca∗
+1The Swiss AI Lab IDSIA,
+Università della Svizzera italiana
+ivan.marisca@usi.ch
+Andrea Cini∗
+1The Swiss AI Lab IDSIA,
+Università della Svizzera italiana
+andrea.cini@usi.ch
+Cesare Alippi
+1The Swiss AI Lab IDSIA,
+Università della Svizzera italiana
+2Politecnico di Milano
+cesare.alippi@usi.ch
+Abstract
+Modeling multivariate time series as temporal signals over a (possibly dynamic)
+graph is an effective representational framework that allows for developing models
+for time series analysis. In fact, discrete sequences of graphs can be processed by
+autoregressive graph neural networks to recursively learn representations at each
+discrete point in time and space. Spatiotemporal graphs are often highly sparse,
+with time series characterized by multiple, concurrent, and long sequences of
+missing data, e.g., due to the unreliable underlying sensor network. In this context,
+autoregressive models can be brittle and exhibit unstable learning dynamics. The
+objective of this paper is, then, to tackle the problem of learning effective models
+to reconstruct, i.e., impute, missing data points by conditioning the reconstruction
+only on the available observations. In particular, we propose a novel class of
+attention-based architectures that, given a set of highly sparse discrete observations,
+learn a representation for points in time and space by exploiting a spatiotemporal
+propagation architecture aligned with the imputation task. Representations are
+trained end-to-end to reconstruct observations w.r.t. the corresponding sensor and its
+neighboring nodes. Compared to the state of the art, our model handles sparse data
+without propagating prediction errors or requiring a bidirectional model to encode
+forward and backward time dependencies. Empirical results on representative
+benchmarks show the effectiveness of the proposed method.
+1 Introduction
+Exploiting structure – both temporal and spatial – is arguably the key ingredient for the success of
+modern deep learning architectures and models. Structure and invariances allow imposing inductive
+biases to learning systems that act as strong regularizations, thus limiting the space of possible models
+to the most plausible ones and, consequently, greatly reducing sample complexity. This is the case
+with spatiotemporal graph neural networks (STGNNs) [ 1–3] which learn to process multivariate
+time series while taking into account underlying space and time dependencies by encoding structural
+spatiotemporal inductive biases in their architectures. In particular, graphs are used to model the
+presence of spatial relationships which can be thought of as soft functional dependencies existing
+∗Equal contribution.
+36th Conference on Neural Information Processing Systems (NeurIPS 2022).
+arXiv:2205.13479v2  [cs.LG]  10 Oct 2022
+
+=== PAGE 2 ===
+among the sensors generating the time series [4]. However, even when spatiotemporal relationships
+are present, available data are almost always incomplete and irregularly sampled both spatially and
+temporally. This is deﬁnitely true for data coming from real sensor networks (SNs), where the
+presence of missing data is a phenomenon inherent to any data acquisition or communication process.
+In this case, a common approach is to reconstruct missing time series observations with simple
+interpolation strategies before proceeding with the downstream task. However, arguably, this induces
+a bias in the inference procedure, possibly made even worse by the strong regularization imposed on
+the model. More advanced methods deal with missing data by autoregressively replacing missing
+observations with predicted ones, eventually using bidirectional architectures [5, 6] to exploit both
+forward and backward temporal dependencies. To account also for spatial dependencies, Cini et al.
+[4] introduced a method, named GRIN, combining a bidirectional autoregressive architecture with
+message passing graph neural networks [7–10] for spatiotemporal imputation. Despite being the state
+of the art in imputation, GRIN suffers from the error propagation typical of autoregressive models
+that bootstrap future inferences from their own predictions. In fact, we argue that the propagation of
+imputed (biased) values through space and time combined with noisy observations might exacerbate
+error accumulation in highly sparse data and drive the hidden state of GRIN-like models to possibly
+drift away. In this paper, we aim at tackling this problem by designing an architecture based on a novel
+attention mechanism that takes spatiotemporal sparsity into account while learning representations
+and imputing missing values.
+Attention-based models allow distributed representations to emerge by letting each discrete element –
+representing an entity or point within a structured environment – interact with each other. In fact, these
+mechanisms for propagating information through structures have been recently linked to collective
+intelligence [11]. In our context, each token, represented as a node in a sequence of graphs, represents
+a point in space and time. A trivial way to account for sparsity in this setting is to constrain the
+attention coefﬁcients of time steps corresponding to missing data to be zero or simply to add an
+auxiliary token to indicate missing observations; basically, the resulting reconstruction model would
+behave similarly to a denoising autoencoder, in the same spirit of BERT-like encoders popular
+in natural language processing [ 12]. Conversely, we propose a novel architecture exploiting an
+inter-node sparse spatiotemporal attention mechanism within the neural message-passing framework.
+In particular, we seek to design an architecture where each processing stage is aligned with the
+task of reconstructing missing spatiotemporal observations. Our model can be seen as a learned,
+self-organizing, spatiotemporal propagation process that, as we will motivate throughout the paper, is
+more apt to the purpose of missing data reconstruction than standard encoder-decoder architectures.
+In fact, compared with the alternatives discussed so far, our method exploits the aforementioned
+propagation process to learn a predictive representation for each missing observation by relying
+only on observed values propagated through the spatiotemporal structure. This approach achieves
+the twofold objective of avoiding propagating biased representation – typical in the autoregressive
+framework – and reconstructing observations at arbitrary nodes in the sensor network. In summary,
+our main contributions are as follows.
+1. We introduce a sparse spatiotemporal attention mechanism to learn, from sparse data,
+representations localized in time and space.
+2. We design a novel graph neural network architecture based on the aforementioned spatiotem-
+poral attention mechanism and equipped with inductive biases that make the model tailored
+for the multivariate time series imputation task.
+3. We empirically assess the proposed method, showing how it overcomes the limits of existing
+approaches, particularly in settings with highly sparse data.
+The paper is structured as follows. In Section 2 we discuss related works and contrast them with ours.
+We formulate the problem of multivariate time series imputation in the context of spatiotemporal
+graphs in Section 3, and present our approach in Section 4 by providing an in-depth discussion of
+motivations, design choices, as well as methodological and technical issues. Finally, in Section 5,
+we report the empirical results on several relevant benchmarks. Conclusions and future works are
+discussed in Section 6.
+2
+
+=== PAGE 3 ===
+2 Related works
+Multivariate time series imputation is a core task in time series analysis. Besides standard statistical
+approaches based on linear autoregressive models [13–15] or interpolation [16], methods based on
+matrix factorization are widely popular [17] and can also incorporate temporal [18] and graph-side
+information [19]. Deep learning methods are also commonly used in this regard. In particular, deep
+autoregressive models based on recurrent neural networkss (RNNs) are currently among the most
+widely adopted methods [20, 5, 6, 21]. In this direction, BRITS [6] is archetypal of several related
+works which exploit bidirectional RNNs to perform imputation. Notably, differently from a denoising
+autoencoder, BRITS uses one-step-ahead forecasting as a surrogate task to learn an imputation model
+while using a simple linear regression layer to incorporate spatial information. Several approaches in
+the literature, then, rely on generative adversarial neural networks [22] – often paired with RNNs – to
+generate imputed subsequences by matching the underlying data distribution [23, 24, 21]. Recently,
+several attention-based imputation techniques have also been proposed [25–27], however, none of
+these explicitly account for spatial dependencies within the graph processing framework and overlook
+the spatial dimension of the problem. Other works, instead, address this problem in the context
+of continuous-time models [28]. Huang et al. [29], in particular, exploit graph representations to
+model spatial dynamics. The limits of deep autoregressive approaches in data reconstruction have
+also been tackled by using hierarchical imputation methods [ 30, 31]. More related to our work,
+GRIN [4] uses a bidirectional graph RNN, paired with a message passing spatial decoder, to impute
+time series based on spatiotemporal dependencies. Other graph-based architectures have been used
+in application-speciﬁc settings, such as trafﬁc data [32, 33] and load proﬁles from smart grids [34].
+While GRIN achieves remarkable performance, we argue that spatial regularization might not be
+enough to prevent error compounding in the states of the recurrent graph network.
+The attention mechanism has been exploited in several contexts within the graph deep learning
+literature, in particular in anisotropic graph convolutional ﬁlters [35–38]. Among STGNNs, attention-
+based architectures have been exploited in time series forecasting [ 37, 39–41]. In particular, Tra-
+verseNet [41] is specially related to our work, since it relies on spatiotemporal autoregressive attention
+to compute messages exchanged between nodes. One striking example of attention being used suc-
+cessfully to process incomplete data is in pretraining routines for representation learning in natural
+language processing [12, 42]. Finally, graph neural networks are also popular for reconstructing
+missing features in static graphs [43–45].
+3 Preliminaries
+We model multivariate spatiotemporal time series as observations coming from a SNs. In a SN every
+i-th node, i.e., sensor, acquires a d-dimensional xi
+t∈ Rd observation at each t-th time step. We
+denote by Xt∈ RNt×d the matrix collecting the measurements ofNt sensors at time stept, with
+Xt:t+T being the sequence ofT measurements collected in the time interval [t,t +T ). We model
+functional relationships among the sensors as graph edges. Relationships can be often inferred from
+available side information, e.g., one can extract a graph from the position of each sensor and their
+reciprocal physical proximity or the structure of the physical system where sensors are placed. In other
+cases instead, functional dependencies can be inferred directly from data by exploiting some afﬁnity
+score (e.g., Pearson correlation, Granger causality [46], correntropy [47], etc.), or more advanced
+techniques (e.g., graph learning methods [48]). We model the extracted relational information with a
+weighted, possibly asymmetric adjacency matrix At∈ RNt×Nt, in which each nonzero entryai,j
+t
+indicates the weight of the edge going from the i-th node to the j-th. While our framework can
+account for dynamic relationships, we mostly focus on settings where the topology is static, i.e.,
+At = A andNt =N. Finally, we assume to have available sensor-level covariates Qt∈ RN×dq
+that act as spatiotemporal coordinates to localize a point in time and space (e.g., date/time features
+and geographic location). Note that coordinates qi
+t are assumed available for each node at each time
+step; in section 4 we discuss how Qt can be learned as a spatiotemporal positional encoding. We then
+model observations as a discrete sequence of spatiotemporal graphs, where each graph is a triplet
+Gt =⟨Xt, Qt, A⟩. Note that, in general, we indicate with capital letters network-level attributes,
+while we use the lowercase for the sensor level.
+As already mentioned, observations might be incomplete due to faults, partial observability, and costs
+of the data acquisition process. We model data availability with a binary mask mi
+t∈{ 0, 1} which is
+3

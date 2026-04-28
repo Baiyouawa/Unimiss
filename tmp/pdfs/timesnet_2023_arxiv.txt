@@ -1,0 +1,224 @@
+
+=== PAGE 1 ===
+Published as a conference paper at ICLR 2023
+TIMES NET: T EMPORAL 2D-VARIATION MODELING
+FOR GENERAL TIME SERIES ANALYSIS
+Haixu Wu∗, Tengge Hu∗, Y ong Liu∗, Hang Zhou, Jianmin Wang, Mingsheng Long B
+School of Software, BNRist, Tsinghua University, Beijing 100084, China
+{whx20,liuyong21,htg21,h-zhou18}@mails.tsinghua.edu.cn
+{jimwang,mingsheng}@tsinghua.edu.cn
+ABSTRACT
+Time series analysis is of immense importance in extensive applications, such as
+weather forecasting, anomaly detection, and action recognition. This paper focuses
+on temporal variation modeling, which is the common key problem of extensive
+analysis tasks. Previous methods attempt to accomplish this directly from the 1D
+time series, which is extremely challenging due to the intricate temporal patterns.
+Based on the observation of multi-periodicity in time series, we ravel out the com-
+plex temporal variations into the multiple intraperiod- and interperiod-variations.
+To tackle the limitations of 1D time series in representation capability, we extend
+the analysis of temporal variations into the 2D space by transforming the 1D time
+series into a set of 2D tensors based on multiple periods. This transformation can
+embed the intraperiod- and interperiod-variations into the columns and rows of
+the 2D tensors respectively, making the 2D-variations to be easily modeled by 2D
+kernels. Technically, we propose the TimesNet with TimesBlock as a task-general
+backbone for time series analysis. TimesBlock can discover the multi-periodicity
+adaptively and extract the complex temporal variations from transformed 2D ten-
+sors by a parameter-efﬁcient inception block. Our proposed TimesNet achieves
+consistent state-of-the-art in ﬁve mainstream time series analysis tasks, including
+short- and long-term forecasting, imputation, classiﬁcation, and anomaly detection.
+Code is available at this repository: https://github.com/thuml/TimesNet.
+1 I NTRODUCTION
+Time series analysis is widely used in extensive real-world applications, such as the forecasting of
+meteorological factors for weather prediction (Wu et al., 2021), imputation of missing data for data
+mining (Friedman, 1962), anomaly detection of monitoring data for industrial maintenance (Xu et al.,
+2021) and classiﬁcation of trajectories for action recognition (Franceschi et al., 2019). Because of its
+immense practical value, time series analysis has received great interest (Lim & Zohren, 2021).
+Different from other types of sequential data, such as language or video, time series is recorded
+continuously and each time point only saves some scalars. Since one single time point usually cannot
+provide sufﬁcient semantic information for analysis, many works focus on the temporal variation,
+which is more informative and can reﬂect the inherent properties of time series, such as the continuity,
+periodicity, trend and etc. However, the variations of real-world time series always involve intricate
+temporal patterns, where multiple variations (e.g. rising, falling, ﬂuctuation and etc.) mix and overlap
+with each other, making the temporal variation modeling extremely challenging.
+Especially in the deep learning communities, beneﬁting from the powerful non-linear modeling
+capacity of deep models, many works have been proposed to capture the complex temporal variations
+in real-world time series. One category of methods adopts recurrent neural networks (RNN) to
+model the successive time points based on the Markov assumption (Hochreiter & Schmidhuber,
+1997; Lai et al., 2018; Shen et al., 2020). However, these methods usually fail in capturing the long-
+term dependencies and their efﬁciencies suffer from the sequential computation paradigm. Another
+category of methods utilizes the convolutional neural network along the temporal dimension (TCN)
+∗Equal Contribution
+1
+arXiv:2210.02186v3  [cs.LG]  12 Apr 2023
+
+=== PAGE 2 ===
+Published as a conference paper at ICLR 2023
+Period 3
+Time
+Frequency
+Value
+Amplitude
+Period 1
+Period 2…
+Reshaped
+Time
+Series
+ҁ҂
+FFT for Periods Reshape to 2D Structure
+Period 1
+Period 2
+Period 1
+Length
+Period 2
+Length
+…
+Reshaped
+Time
+Series
+ҁ҂
+IntraperiodInterperiod
+Periodicity
+Continuity
+Time
+Value
+Period 2
+Period 1
+ŏ
+Intraperiod-
+variation
+Interperiod-variation
+Period 1
+Period 2
+Period 3
+Interperiod-variation
+Intraperiod-variation
+Period 3
+Time
+Value
+Period 2
+Period 1
+ŏ
+Intraperiod-
+variation
+Interperiod-variation
+Period 1
+Period 2
+Period 3
+Interperiod-variation
+Intraperiod-variation
+Time points at the same 
+phase of different periods
+ŏ
+ŏ
+Figure 1: Multi-periodicity and temporal 2D-variation of time series. Each period involves the
+intraperiod-variation and interperiod-variation. We transform the original 1D time series into a set of
+2D tensors based on multiple periods, which can unify the intraperiod- and interperiod-variations.
+to extract the variation information (Franceschi et al., 2019; He & Zhao, 2019). Also, because of the
+locality property of the one-dimension convolution kernels, they can only model the variations among
+adjacent time points, thereby still failing in long-term dependencies. Recently, Transformers with
+attention mechanism have been widely used in sequential modeling (Brown et al., 2020; Dosovitskiy
+et al., 2021; Liu et al., 2021b). In time series analysis, many Transformer-based models adopt the
+attention mechanism or its variants to capture the pair-wise temporal dependencies among time points
+(Li et al., 2019; Kitaev et al., 2020; Zhou et al., 2021; 2022). But it is hard for attention mechanism
+to ﬁnd out reliable dependencies directly from scattered time points, since the temporal dependencies
+can be obscured deeply in intricate temporal patterns (Wu et al., 2021).
+In this paper, to tackle the intricate temporal variations, we analyze the time series from a new
+dimension of multi-periodicity. Firstly, we observe that real-world time series usually present
+multi-periodicity, such as daily and yearly variations for weather observations, weekly and quarterly
+variations for electricity consumption. These multiple periods overlap and interact with each other,
+making the variation modeling intractable. Secondly, for each period, we ﬁnd out that the variation of
+each time point is not only affected by the temporal pattern of its adjacent area but also highly related
+to the variations of its adjacent periods. For clearness, we name these two types of temporal variations
+as intraperiod-variation and interperiod-variation respectively. The former indicates short-term
+temporal patterns within a period. The latter can reﬂect long-term trends of consecutive different
+periods. Note that for the time series without clear periodicity, the variations will be dominated by
+the intraperiod-variation and is equivalent to the ones with inﬁnite period length.
+Since different periods will lead to different intraperiod- and interperiod-variations, the multi-
+periodicity can naturally derive a modular architecture for temporal variation modeling, where
+we can capture the variations derived by a certain period in one module. Besides, this design makes
+the intricate temporal patterns disentangled, beneﬁting the temporal variation modeling. However,
+it is notable that the 1D time series is hard to explicitly present two different types of variations
+simultaneously. To tackle this obstacle, we extend the analysis of temporal variations into the 2D
+space. Concretely, as shown in Figure 1, we can reshape the 1D time series into a 2D tensor, where
+each column contains the time points within a period and each row involves the time points at the
+same phase among different periods. Thus, by transforming 1D time series into a set of 2D tensors,
+we can break the bottleneck of representation capability in the original 1D space and successfully
+unify the intraperiod- and interperiod-variations in 2D space, obtaining the temporal 2D-variations.
+Technically, based on above motivations, we go beyond previous backbones and propose theTimesNet
+as a new task-general model for time series analysis. Empowering by TimesBlock, TimesNet can
+discover the multi-periodicity of time series and capture the corresponding temporal variations in a
+modular architecture. Concretely, TimesBlock can adaptively transform the 1D time series into a set
+of 2D tensors based on learned periods and further capture intraperiod- and interperiod-variations
+in the 2D space by a parameter-efﬁcient inception block. Experimentally, TimesNet achieves the
+consistent state-of-the-art in ﬁve mainstream analysis tasks, including short- and long-term forecasting,
+imputation, classiﬁcation and anomaly detection. Our contributions are summarized in three folds:
+• Motivated by multi-periodicity and complex interactions within and between periods, we
+ﬁnd out a modular way for temporal variation modeling. By transforming the 1D time series
+into 2D space, we can present the intraperiod- and interperiod-variations simultaneously.
+2
+
+=== PAGE 3 ===
+Published as a conference paper at ICLR 2023
+• We propose the TimesNet with TimesBlock to discover multiple periods and capture tempo-
+ral 2D-variations from transformed 2D tensors by a parameter-efﬁcient inception block.
+• As a task-general foundation model, TimesNet achieves the consistent state-of-the-art in ﬁve
+mainstream time series analysis tasks. Detailed and insightful visualizations are included.
+2 R ELATED WORK
+As a key problem of time series analysis, temporal variation modeling has been well explored.
+Many classical methods assume that the temporal variations follow the pre-deﬁned patterns, such as
+ARIMA (Anderson & Kendall, 1976), Holt-Winter (Hyndman & Athanasopoulos, 2018) and Prophet
+(Taylor & Letham, 2018). However, the variations of real-world time series are usually too complex
+to be covered by pre-deﬁned patterns, limiting the practical applicability of these classical methods.
+In recent years, many deep models have been proposed for temporal modeling, such as MLP, TCN,
+RNN-based models (Hochreiter & Schmidhuber, 1997; Lai et al., 2018; Franceschi et al., 2019).
+Technically, MLP-based methods (Oreshkin et al., 2019; Challu et al., 2022; Zeng et al., 2023; Zhang
+et al., 2022) adopt the MLP along the temporal dimension and encode the temporal dependencies
+into the ﬁxed parameter of MLP layers. The TCN-based (2019) methods capture the temporal
+variations by convolutional kernels that slide along the temporal dimension. The RNN-based methods
+(Hochreiter & Schmidhuber, 1997; Lai et al., 2018; Gu et al., 2022) utilize the recurrent structure and
+capture temporal variations implicitly by state transitions among time steps. Note that none of these
+methods consider the temporal 2D-variations derived by periodicity, which is proposed in this paper.
+Besides, Transformers have shown great performance in time series forecasting (Zhou et al., 2021;
+Liu et al., 2021a; Wu et al., 2021; Zhou et al., 2022). With attention mechanism, they can discover the
+temporal dependencies among time points. Especially, Wu et al. present the Autoformer with Auto-
+Correlation mechanism to capture the series-wise temporal dependencies based on the learned periods.
+In addition, to tackle the intricate temporal patterns, Autoformer also presents a deep decomposition
+architecture to obtain the seasonal and trend parts of input series. Afterward, FEDformer (Zhou
+et al., 2022) employs the mixture-of-expert design to enhance the seasonal-trend decomposition and
+presents a sparse attention within the frequency domain. Unlike previous methods, we ravel out the
+intricate temporal patterns by exploring the multi-periodicity of time series and capture the temporal
+2D-variations in 2D space by well-acknowledged computer vision backbones for the ﬁrst time.
+It is also notable that, different from previous methods, we no longer limit to a speciﬁc analysis task
+and attempt to propose a task-general foundation model for time series analysis.
+3 T IMES NET
+As aforementioned, based on the multi-periodicity of time series, we propose the TimesNet with a
+modular architecture to capture the temporal patterns derived from different periods. For each period,
+to capture the corresponding intraperiod- and interperiod-variations, we design a TimesBlock within
+the TimesNet, which can transform the 1D time series into 2D space and simultaneously model the
+two types of variations by a parameter-efﬁcient inception block.
+3.1 T RANSFORM 1D- VARIATIONS INTO 2D- VARIATIONS
+As shown in Figure 1, each time point involves two types of temporal variations with its adjacent area
+and with the same phase among different periods simultaneously, namelyintraperiod- and interperiod-
+variations. However, this original 1D structure of time series can only present the variations among
+adjacent time points. To tackle this limitation, we explore the two-dimension structure for temporal
+variations, which can explicitly present variations within and between periods, thereby with more
+advantages in representation capability and beneﬁting the subsequent representation learning.
+Concretely, for the length-T time series withC recorded variates, the original 1D organization is
+X1D∈ RT×C. To represent the interperiod-variation, we need to discover periods ﬁrst. Technically,
+we analyze the time series in the frequency domain by Fast Fourier Transform (FFT) as follows:
+A = Avg
+(
+Amp
+(
+FFT(X1D)
+))
+,{f1,··· ,f k} = arg Topk
+f∗∈{1,··· ,[ T
+2 ]}
+(A), pi =
+⌈T
+fi
+⌉
+,i∈{ 1,··· ,k}.
+(1)
+3

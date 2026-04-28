@@ -1,0 +1,13 @@
+\section{Related Work}
+
+\subsection{Observed-to-Missing Dominant Imputation}
+BRITS \cite{cao2018brits} performs bidirectional recurrent recovery and dynamically updates missing values during temporal propagation. SAITS \cite{du2023saits} and ImputeFormer \cite{liu2024imputeformer} further improve observed-context utilization with attention-based encoders. These methods are strong in OM recovery and benefit from OO context, but MM is typically implicit.
+
+\subsection{Observed-Context Structural Modeling}
+SPIN \cite{marisca2022spin} strengthens observed-context propagation through graph-temporal interactions and mask-aware initialization. TimesNet \cite{wu2023timesnet} provides strong periodic representation that can indirectly benefit imputation. They improve OO quality, yet do not explicitly expose missing-side expert decomposition.
+
+\subsection{Generative and Consistency-Oriented Recovery}
+FGTI \cite{chen2024fgti} and MTSCI \cite{liu2024mtsci} introduce generative denoising and consistency constraints that partially capture missing coupling. They are closer to MM motivation than pure regression baselines, but still do not provide an explicit MM branch with dedicated prompt, router, and expert bank.
+
+\subsection{MoE Routing Inspirations}
+Recent MoE studies motivate expert specialization and routing design \cite{puigcerver2024softmoe,shen2024mole,liu2024lingualsmoe,wang2025i2moe,zhou2025moex}. In this work, we adapt this perspective to missingness mechanisms rather than token semantics, and couple it with mechanism-aware gating tailored to MAR/MNAR mixtures.

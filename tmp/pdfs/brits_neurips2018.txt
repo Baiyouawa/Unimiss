@@ -1,0 +1,175 @@
+
+=== PAGE 1 ===
+BRITS: Bidirectional Recurrent Imputation for Time
+Series
+Wei Cao∗
+Tsinghua University
+Bytedance AI Lab
+cao-13@tsinghua.org.cn
+Dong Wang
+Duke University
+dong.wang363@duke.edu
+Jian Li
+Tsinghua University
+lijian83@mail.tsinghua.edu.cn
+Hao Zhou
+Bytedance AI Lab
+haozhou0806@gmail.com
+Yitan Li
+Bytedance AI Lab
+liyitan@bytedance.com
+Lei Li
+Bytedance AI Lab
+lileilab@bytedance.com
+Abstract
+Time series are ubiquitous in many classiﬁcation/regression applications. However,
+the time series data in real applications may contain many missing values. Hence,
+given multiple (possibly correlated) time series data, it is important to ﬁll in
+missing values and at the same time to predict their class labels. Existing imputation
+methods often impose strong assumptions of the underlying data generating process,
+such as linear dynamics in the state space. In this paper, we propose a novel method,
+called BRITS, based on recurrent neural networks for missing value imputation
+in time series data. Our proposed method directly learns the missing values in a
+bidirectional recurrent dynamical system, without any speciﬁc assumption. The
+imputed values are treated as variables of RNN graph and can be effectively
+updated during backpropagation. BRITS has three advantages: (a) it can handle
+multiple correlated missing values in time series; (b) it generalizes to time series
+with nonlinear dynamics underlying; (c) it provides a data-driven imputation
+procedure and applies to general settings with missing data. We evaluate our
+model on three real-world datasets, including an air quality dataset, a health-
+care dataset, and a localization dataset for human activity. Experiments show
+that our model outperforms the state-of-the-art methods in both imputation and
+classiﬁcation/regression.
+1 Introduction
+Multivariate time series data are abundant in many application areas, such as ﬁnancial marketing
+[5, 4], health-care [ 10, 22], meteorology [ 31, 26], and trafﬁc engineering [ 29, 35]. Time series
+are widely used as signals for classiﬁcation/regression in various applications of corresponding
+areas. However, missing values in time series are very common, due to unexpected accidents, such
+as equipment damage or communication error, and may signiﬁcantly harm the performance of
+downstream applications.
+Much prior work proposed to ﬁx the missing data problem with statistics and machine learning
+approaches. However most of them require fairly strong assumptions on missing values. We can ﬁll
+the missing values using classical statistical time series models such as ARMA or ARIMA (e.g., [1]).
+But these models are essentially linear (after differencing). Kreindler et al. [19] assume that the data
+are smoothable, i.e., there is no sudden wave in the periods of missing values, hence imputing missing
+∗Work done while Wei Cao was a research intern at Bytedance AI Lab
+32nd Conference on Neural Information Processing Systems (NeurIPS 2018), Montréal, Canada.
+
+=== PAGE 2 ===
+values can be done by smoothing over nearby values. Matrix completion has also been used to
+address missing value problems (e.g., [30, 34]). But it typically applies to only static data and requires
+strong assumptions such as low-rankness. We can also predict missing values by ﬁtting a parametric
+data-generating model with the observations [14, 2], which assumes that data of time series follow the
+distribution of hypothetical models. These assumptions make corresponding imputation algorithms
+less general, and the performance less desirable when the assumptions do not hold.
+In this paper, we propose BRITS, a novel method for ﬁlling the missing values for multiple correlated
+time series. Internally, BRITS adapts recurrent neural networks (RNN) [16, 11] for imputing missing
+values, without any speciﬁc assumption over the data. Much prior work uses non-linear dynamical
+systems for time series prediction [9, 24, 3]. In our method, we instantiate the dynamical system as a
+bidirectional RNN, i.e., imputing missing values with bidirectional recurrent dynamics. In particular,
+we make the following technical contributions:
+• We design a bidirectional RNN model for imputing missing values. We directly use RNN for
+predicting missing values, instead of tuning weights for smoothing as in [10]. Our method
+does not impose speciﬁc assumption, hence works more generally than previous methods.
+• We regard missing values as variables of the bidirectional RNN graph, which are involved
+in the backpropagation process. In such case, missing values get delayed gradients in both
+forward and backward directions with consistency constraints, which makes the estimation
+of missing values more accurate.
+• We simultaneously perform missing value imputation and classiﬁcation/regression of ap-
+plications jointly in one neural graph. This alleviates the error propagation problem from
+imputation to classiﬁcation/regression and makes the classiﬁcation/regression more accurate.
+• We evaluate our model on three real-world datasets, including an air quality dataset, a
+health-care dataset and a localization dataset of human activities. Experimental results show
+that our model outperforms the state-of-the-art models for both imputation and classiﬁca-
+tion/regression accuracies.
+2 Related Work
+There is a large body of literature on the imputation of missing values in time series. We only mention
+a few closely related ones. The interpolate method tries to ﬁt a "smooth curve" to the observations
+and thus reconstruct the missing values by the local interpolations [19, 14]. Such method discards
+any relationships between the variables over time. The autoregressive method, including ARIMA,
+SARIMA etc., eliminates the non-stationary parts in the time series data and ﬁt a parameterized
+stationary model. The state space model further combines ARIMA and Kalman Filter [14, 15], which
+provides more accurate results. Multivariate Imputation by Chained Equations (MICE) [2] ﬁrst
+initializes the missing values arbitrarily and then estimates each missing variable based on the chain
+equations. The graphical model [20] introduces a latent variable for each missing value, and ﬁnds
+the latent variables by learning their transition matrix. There are also some data-driven methods
+for missing value imputation. Yi et al. [ 32] imputed the missing values in air quality data with
+geographical features. Wang et al. [ 30] imputed missing values in recommendation system with
+collaborative ﬁltering. Yu et al. [34] utilized matrix factorization with temporal regularization to
+impute the missing values in regularly sampled time series data.
+Recently, some researchers attempted to impute the missing values with recurrent neural networks
+[7, 10, 21, 12, 33]. The recurrent components are trained together with the classiﬁcation/regression
+component, which signiﬁcantly boosts the accuracy. Che et al. [10] proposed GRU-D, which imputes
+missing values in health-care data with a smooth fashion. It assumes that a missing variable can be
+represented as the combination of its corresponding last observed value and the global mean. GRU-D
+achieves remarkable performance on health-care data. However, it has many limitations on general
+datasets [10]. A closely related work is M-RNN proposed by Yoon et al. [33]. M-RNN also utilizes
+bi-directional RNN to impute missing values. Differing from our model, it drops the relationships
+between missing variables. The imputed values in M-RNN are treated as constants and cannot be
+sufﬁciently updated.
+2
+
+=== PAGE 3 ===
+3 Preliminary
+We ﬁrst present the problem formulation and some necessary preliminaries.
+Deﬁnition 1 (Multivariate Time Series) We denote a multivariate time series X =
+{x1, x2,..., xT} as a sequence of T observations. The t-th observation xt ∈ RD consists
+ofD features{x1
+t,x 2
+t,...,x D
+t}, and was observed at timestampst (the time gap between different
+timestamps may not be the same). In reality, due to unexpected accidents, such as equipment damage
+or communication error, xt may have the missing values (e.g., in Fig. 1, x3
+1 in x1 is missing). To
+represent the missing values in xt, we introduce a masking vector mt where,
+md
+t =
+{
+0 ifxd
+t is not observed
+1 otherwise .
+In many cases, some features can be missing for consecutive timestamps (e.g., blue blocks in Fig. 1).
+We deﬁneδd
+t to be the time gap from the last observation to the current timestampst, i.e.,
+δd
+t =
+
+
+
+st−st−1 +δd
+t−1 ift> 1, md
+t−1 = 0
+st−st−1 ift> 1, md
+t−1 = 1
+0 ift = 1
+.
+See Fig. 1 for an illustration.
+Figure 1: An example of multivariate time series with missing values. x1 to x6 are observed at
+s1...6 = 0, 2, 7, 9, 14, 15 respectively. Considering the 2nd feature in x6, the last observation of the
+2nd feature took place ats2 = 2, and we have thatδ2
+6 =s6−s2 = 13.
+In this paper, we study a general setting for time series classiﬁcation/regression problems with missing
+values. We use y to denote the label of corresponding classiﬁcation/regression task. In general, y
+can be either a scalar or a vector. Our goal is to predict y based on the given time series X. In the
+meantime, we impute the missing values in X as accurate as possible. In another word, we aim to
+design an effective multi-task learning algorithm for both classiﬁcation/regression and imputation.
+4 BRITS
+In this section, we describe the BRITS. Differing from the prior work which uses RNN to impute
+missing values in a smooth fashion [10], we learn the missing values directly in a recurrent dynamical
+system [25, 28] based on the observed data. The missing values are thus imputed according to the
+recurrent dynamics, which signiﬁcantly boosts both the imputation accuracy and the ﬁnal classiﬁca-
+tion/regression accuracy. We start the description with the simplest case: the variables observed at
+the same time are mutually uncorrelated. For such case, we propose algorithms for imputation with
+unidirectional recurrent dynamics and bidirectional recurrent dynamics, respectively. We further
+propose an algorithm for correlated multivariate time series in Section 4.3.
+4.1 Unidirectional Uncorrelated Recurrent Imputation
+For the simplest case, we assume that for thet-th step,xi
+t andxj
+t are uncorrelated ifi̸=j (butxi
+t may
+be correlated with somexj
+t′̸=t). We ﬁrst propose an imputation algorithm by unidirectional recurrent
+dynamics, denoted as RITS-I.
+In a unidirectional recurrent dynamical system, each value in the time series can be derived by its
+predecessors with a ﬁxedarbitrary function [9, 24, 3]. Thus, we iteratively impute all the variables in
+3

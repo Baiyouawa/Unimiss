@@ -1,0 +1,918 @@
+[workspace]
+# 1. 将 [project] 改为 [workspace]
+name = "nuwats"
+version = "0.1.0"
+platforms = ["linux-64"]
+channels = [
+    # 使用官方 conda-forge 源，避免镜像证书问题
+    "https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge"
+]
+
+[tasks]
+# CIKM 2026 main experiment matrix
+# Baselines: Mean, BRITS, SPIN, TimesNet, SAITS, ImputeFormer, MTSCI, FGTI
+# Ours: explicit OO/OM/MM + Stage-II mechanism-aware gate
+# Datasets: ETT and IAQ
+# Mechanisms: ETT -> mar/mnar_t/mix, IAQ -> mar/mnar_x/mix
+# Missing rates: 0.2 / 0.3 / 0.4
+
+[tasks.run-brits]
+cmd = "python Baseline/Brits.py"
+description = "Run BRITS baseline"
+
+[tasks.run-mean]
+cmd = "python Baseline/Mean.py"
+description = "Run mean-imputation baseline"
+
+[tasks.run-timesnet]
+cmd = "python Baseline/Timesnet.py"
+description = "Run TimesNet baseline"
+
+[tasks.run-saits]
+cmd = "python Baseline/SAITS.py"
+description = "Run SAITS baseline"
+
+[tasks.run-imputeformer]
+cmd = "python Baseline/ImputeFormer.py"
+description = "Run ImputeFormer baseline"
+
+[tasks.run-mtsci]
+cmd = "python Baseline/MTSCI.py"
+description = "Run MTSCI baseline"
+
+[tasks.run-fgti]
+cmd = "python Baseline/FGTI.py"
+description = "Run FGTI baseline"
+
+[tasks.run-spin]
+cmd = "python Baseline/SPIN.py"
+description = "Run SPIN baseline"
+
+# ---- brits ----
+[tasks.run-brits-ett-mar-20]
+cmd = "python Baseline/Brits.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.2"
+
+[tasks.run-brits-ett-mar-30]
+cmd = "python Baseline/Brits.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.3"
+
+[tasks.run-brits-ett-mar-40]
+cmd = "python Baseline/Brits.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.4"
+
+[tasks.run-brits-ett-mnar_t-20]
+cmd = "python Baseline/Brits.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.2"
+
+[tasks.run-brits-ett-mnar_t-30]
+cmd = "python Baseline/Brits.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.3"
+
+[tasks.run-brits-ett-mnar_t-40]
+cmd = "python Baseline/Brits.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.4"
+
+[tasks.run-brits-ett-mix-20]
+cmd = "python Baseline/Brits.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2"
+
+[tasks.run-brits-ett-mix-30]
+cmd = "python Baseline/Brits.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3"
+
+[tasks.run-brits-ett-mix-40]
+cmd = "python Baseline/Brits.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4"
+
+[tasks.run-brits-italy-mar-20]
+cmd = "python Baseline/Brits.py --dataset italy_air_quality --mask_type mar --missing_rate 0.2"
+
+[tasks.run-brits-italy-mar-30]
+cmd = "python Baseline/Brits.py --dataset italy_air_quality --mask_type mar --missing_rate 0.3"
+
+[tasks.run-brits-italy-mar-40]
+cmd = "python Baseline/Brits.py --dataset italy_air_quality --mask_type mar --missing_rate 0.4"
+
+[tasks.run-brits-italy-mnar_x-20]
+cmd = "python Baseline/Brits.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.2"
+
+[tasks.run-brits-italy-mnar_x-30]
+cmd = "python Baseline/Brits.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.3"
+
+[tasks.run-brits-italy-mnar_x-40]
+cmd = "python Baseline/Brits.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.4"
+
+[tasks.run-brits-italy-mix-20]
+cmd = "python Baseline/Brits.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2"
+
+[tasks.run-brits-italy-mix-30]
+cmd = "python Baseline/Brits.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3"
+
+[tasks.run-brits-italy-mix-40]
+cmd = "python Baseline/Brits.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4"
+
+# ---- mean ----
+[tasks.run-mean-ett-mar-20]
+cmd = "python Baseline/Mean.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.2"
+
+[tasks.run-mean-ett-mar-30]
+cmd = "python Baseline/Mean.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.3"
+
+[tasks.run-mean-ett-mar-40]
+cmd = "python Baseline/Mean.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.4"
+
+[tasks.run-mean-ett-mnar_t-20]
+cmd = "python Baseline/Mean.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.2"
+
+[tasks.run-mean-ett-mnar_t-30]
+cmd = "python Baseline/Mean.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.3"
+
+[tasks.run-mean-ett-mnar_t-40]
+cmd = "python Baseline/Mean.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.4"
+
+[tasks.run-mean-ett-mix-20]
+cmd = "python Baseline/Mean.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2"
+
+[tasks.run-mean-ett-mix-30]
+cmd = "python Baseline/Mean.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3"
+
+[tasks.run-mean-ett-mix-40]
+cmd = "python Baseline/Mean.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4"
+
+[tasks.run-mean-italy-mar-20]
+cmd = "python Baseline/Mean.py --dataset italy_air_quality --mask_type mar --missing_rate 0.2"
+
+[tasks.run-mean-italy-mar-30]
+cmd = "python Baseline/Mean.py --dataset italy_air_quality --mask_type mar --missing_rate 0.3"
+
+[tasks.run-mean-italy-mar-40]
+cmd = "python Baseline/Mean.py --dataset italy_air_quality --mask_type mar --missing_rate 0.4"
+
+[tasks.run-mean-italy-mnar_x-20]
+cmd = "python Baseline/Mean.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.2"
+
+[tasks.run-mean-italy-mnar_x-30]
+cmd = "python Baseline/Mean.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.3"
+
+[tasks.run-mean-italy-mnar_x-40]
+cmd = "python Baseline/Mean.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.4"
+
+[tasks.run-mean-italy-mix-20]
+cmd = "python Baseline/Mean.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2"
+
+[tasks.run-mean-italy-mix-30]
+cmd = "python Baseline/Mean.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3"
+
+[tasks.run-mean-italy-mix-40]
+cmd = "python Baseline/Mean.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4"
+
+# ---- timesnet ----
+[tasks.run-timesnet-ett-mar-20]
+cmd = "python Baseline/Timesnet.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.2"
+
+[tasks.run-timesnet-ett-mar-30]
+cmd = "python Baseline/Timesnet.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.3"
+
+[tasks.run-timesnet-ett-mar-40]
+cmd = "python Baseline/Timesnet.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.4"
+
+[tasks.run-timesnet-ett-mnar_t-20]
+cmd = "python Baseline/Timesnet.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.2"
+
+[tasks.run-timesnet-ett-mnar_t-30]
+cmd = "python Baseline/Timesnet.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.3"
+
+[tasks.run-timesnet-ett-mnar_t-40]
+cmd = "python Baseline/Timesnet.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.4"
+
+[tasks.run-timesnet-ett-mix-20]
+cmd = "python Baseline/Timesnet.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2"
+
+[tasks.run-timesnet-ett-mix-30]
+cmd = "python Baseline/Timesnet.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3"
+
+[tasks.run-timesnet-ett-mix-40]
+cmd = "python Baseline/Timesnet.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4"
+
+[tasks.run-timesnet-italy-mar-20]
+cmd = "python Baseline/Timesnet.py --dataset italy_air_quality --mask_type mar --missing_rate 0.2"
+
+[tasks.run-timesnet-italy-mar-30]
+cmd = "python Baseline/Timesnet.py --dataset italy_air_quality --mask_type mar --missing_rate 0.3"
+
+[tasks.run-timesnet-italy-mar-40]
+cmd = "python Baseline/Timesnet.py --dataset italy_air_quality --mask_type mar --missing_rate 0.4"
+
+[tasks.run-timesnet-italy-mnar_x-20]
+cmd = "python Baseline/Timesnet.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.2"
+
+[tasks.run-timesnet-italy-mnar_x-30]
+cmd = "python Baseline/Timesnet.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.3"
+
+[tasks.run-timesnet-italy-mnar_x-40]
+cmd = "python Baseline/Timesnet.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.4"
+
+[tasks.run-timesnet-italy-mix-20]
+cmd = "python Baseline/Timesnet.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2"
+
+[tasks.run-timesnet-italy-mix-30]
+cmd = "python Baseline/Timesnet.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3"
+
+[tasks.run-timesnet-italy-mix-40]
+cmd = "python Baseline/Timesnet.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4"
+
+# ---- saits ----
+[tasks.run-saits-ett-mar-20]
+cmd = "python Baseline/SAITS.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.2"
+
+[tasks.run-saits-ett-mar-30]
+cmd = "python Baseline/SAITS.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.3"
+
+[tasks.run-saits-ett-mar-40]
+cmd = "python Baseline/SAITS.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.4"
+
+[tasks.run-saits-ett-mnar_t-20]
+cmd = "python Baseline/SAITS.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.2"
+
+[tasks.run-saits-ett-mnar_t-30]
+cmd = "python Baseline/SAITS.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.3"
+
+[tasks.run-saits-ett-mnar_t-40]
+cmd = "python Baseline/SAITS.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.4"
+
+[tasks.run-saits-ett-mix-20]
+cmd = "python Baseline/SAITS.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2"
+
+[tasks.run-saits-ett-mix-30]
+cmd = "python Baseline/SAITS.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3"
+
+[tasks.run-saits-ett-mix-40]
+cmd = "python Baseline/SAITS.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4"
+
+[tasks.run-saits-italy-mar-20]
+cmd = "python Baseline/SAITS.py --dataset italy_air_quality --mask_type mar --missing_rate 0.2"
+
+[tasks.run-saits-italy-mar-30]
+cmd = "python Baseline/SAITS.py --dataset italy_air_quality --mask_type mar --missing_rate 0.3"
+
+[tasks.run-saits-italy-mar-40]
+cmd = "python Baseline/SAITS.py --dataset italy_air_quality --mask_type mar --missing_rate 0.4"
+
+[tasks.run-saits-italy-mnar_x-20]
+cmd = "python Baseline/SAITS.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.2"
+
+[tasks.run-saits-italy-mnar_x-30]
+cmd = "python Baseline/SAITS.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.3"
+
+[tasks.run-saits-italy-mnar_x-40]
+cmd = "python Baseline/SAITS.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.4"
+
+[tasks.run-saits-italy-mix-20]
+cmd = "python Baseline/SAITS.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2"
+
+[tasks.run-saits-italy-mix-30]
+cmd = "python Baseline/SAITS.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3"
+
+[tasks.run-saits-italy-mix-40]
+cmd = "python Baseline/SAITS.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4"
+
+# ---- imputeformer ----
+[tasks.run-imputeformer-ett-mar-20]
+cmd = "python Baseline/ImputeFormer.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.2"
+
+[tasks.run-imputeformer-ett-mar-30]
+cmd = "python Baseline/ImputeFormer.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.3"
+
+[tasks.run-imputeformer-ett-mar-40]
+cmd = "python Baseline/ImputeFormer.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.4"
+
+[tasks.run-imputeformer-ett-mnar_t-20]
+cmd = "python Baseline/ImputeFormer.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.2"
+
+[tasks.run-imputeformer-ett-mnar_t-30]
+cmd = "python Baseline/ImputeFormer.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.3"
+
+[tasks.run-imputeformer-ett-mnar_t-40]
+cmd = "python Baseline/ImputeFormer.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.4"
+
+[tasks.run-imputeformer-ett-mix-20]
+cmd = "python Baseline/ImputeFormer.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2"
+
+[tasks.run-imputeformer-ett-mix-30]
+cmd = "python Baseline/ImputeFormer.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3"
+
+[tasks.run-imputeformer-ett-mix-40]
+cmd = "python Baseline/ImputeFormer.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4"
+
+[tasks.run-imputeformer-italy-mar-20]
+cmd = "python Baseline/ImputeFormer.py --dataset italy_air_quality --mask_type mar --missing_rate 0.2"
+
+[tasks.run-imputeformer-italy-mar-30]
+cmd = "python Baseline/ImputeFormer.py --dataset italy_air_quality --mask_type mar --missing_rate 0.3"
+
+[tasks.run-imputeformer-italy-mar-40]
+cmd = "python Baseline/ImputeFormer.py --dataset italy_air_quality --mask_type mar --missing_rate 0.4"
+
+[tasks.run-imputeformer-italy-mnar_x-20]
+cmd = "python Baseline/ImputeFormer.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.2"
+
+[tasks.run-imputeformer-italy-mnar_x-30]
+cmd = "python Baseline/ImputeFormer.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.3"
+
+[tasks.run-imputeformer-italy-mnar_x-40]
+cmd = "python Baseline/ImputeFormer.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.4"
+
+[tasks.run-imputeformer-italy-mix-20]
+cmd = "python Baseline/ImputeFormer.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2"
+
+[tasks.run-imputeformer-italy-mix-30]
+cmd = "python Baseline/ImputeFormer.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3"
+
+[tasks.run-imputeformer-italy-mix-40]
+cmd = "python Baseline/ImputeFormer.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4"
+
+# ---- mtsci ----
+[tasks.run-mtsci-ett-mar-20]
+cmd = "python Baseline/MTSCI.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.2"
+
+[tasks.run-mtsci-ett-mar-30]
+cmd = "python Baseline/MTSCI.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.3"
+
+[tasks.run-mtsci-ett-mar-40]
+cmd = "python Baseline/MTSCI.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.4"
+
+[tasks.run-mtsci-ett-mnar_t-20]
+cmd = "python Baseline/MTSCI.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.2"
+
+[tasks.run-mtsci-ett-mnar_t-30]
+cmd = "python Baseline/MTSCI.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.3"
+
+[tasks.run-mtsci-ett-mnar_t-40]
+cmd = "python Baseline/MTSCI.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.4"
+
+[tasks.run-mtsci-ett-mix-20]
+cmd = "python Baseline/MTSCI.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2"
+
+[tasks.run-mtsci-ett-mix-30]
+cmd = "python Baseline/MTSCI.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3"
+
+[tasks.run-mtsci-ett-mix-40]
+cmd = "python Baseline/MTSCI.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4"
+
+[tasks.run-mtsci-italy-mar-20]
+cmd = "python Baseline/MTSCI.py --dataset italy_air_quality --mask_type mar --missing_rate 0.2"
+
+[tasks.run-mtsci-italy-mar-30]
+cmd = "python Baseline/MTSCI.py --dataset italy_air_quality --mask_type mar --missing_rate 0.3"
+
+[tasks.run-mtsci-italy-mar-40]
+cmd = "python Baseline/MTSCI.py --dataset italy_air_quality --mask_type mar --missing_rate 0.4"
+
+[tasks.run-mtsci-italy-mnar_x-20]
+cmd = "python Baseline/MTSCI.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.2"
+
+[tasks.run-mtsci-italy-mnar_x-30]
+cmd = "python Baseline/MTSCI.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.3"
+
+[tasks.run-mtsci-italy-mnar_x-40]
+cmd = "python Baseline/MTSCI.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.4"
+
+[tasks.run-mtsci-italy-mix-20]
+cmd = "python Baseline/MTSCI.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2"
+
+[tasks.run-mtsci-italy-mix-30]
+cmd = "python Baseline/MTSCI.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3"
+
+[tasks.run-mtsci-italy-mix-40]
+cmd = "python Baseline/MTSCI.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4"
+
+# ---- fgti ----
+[tasks.run-fgti-ett-mar-20]
+cmd = "python Baseline/FGTI.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.2"
+
+[tasks.run-fgti-ett-mar-30]
+cmd = "python Baseline/FGTI.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.3"
+
+[tasks.run-fgti-ett-mar-40]
+cmd = "python Baseline/FGTI.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.4"
+
+[tasks.run-fgti-ett-mnar_t-20]
+cmd = "python Baseline/FGTI.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.2"
+
+[tasks.run-fgti-ett-mnar_t-30]
+cmd = "python Baseline/FGTI.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.3"
+
+[tasks.run-fgti-ett-mnar_t-40]
+cmd = "python Baseline/FGTI.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.4"
+
+[tasks.run-fgti-ett-mix-20]
+cmd = "python Baseline/FGTI.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2"
+
+[tasks.run-fgti-ett-mix-30]
+cmd = "python Baseline/FGTI.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3"
+
+[tasks.run-fgti-ett-mix-40]
+cmd = "python Baseline/FGTI.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4"
+
+[tasks.run-fgti-italy-mar-20]
+cmd = "python Baseline/FGTI.py --dataset italy_air_quality --mask_type mar --missing_rate 0.2"
+
+[tasks.run-fgti-italy-mar-30]
+cmd = "python Baseline/FGTI.py --dataset italy_air_quality --mask_type mar --missing_rate 0.3"
+
+[tasks.run-fgti-italy-mar-40]
+cmd = "python Baseline/FGTI.py --dataset italy_air_quality --mask_type mar --missing_rate 0.4"
+
+[tasks.run-fgti-italy-mnar_x-20]
+cmd = "python Baseline/FGTI.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.2"
+
+[tasks.run-fgti-italy-mnar_x-30]
+cmd = "python Baseline/FGTI.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.3"
+
+[tasks.run-fgti-italy-mnar_x-40]
+cmd = "python Baseline/FGTI.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.4"
+
+[tasks.run-fgti-italy-mix-20]
+cmd = "python Baseline/FGTI.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2"
+
+[tasks.run-fgti-italy-mix-30]
+cmd = "python Baseline/FGTI.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3"
+
+[tasks.run-fgti-italy-mix-40]
+cmd = "python Baseline/FGTI.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4"
+
+# ---- spin ----
+[tasks.run-spin-ett-mar-20]
+cmd = "python Baseline/SPIN.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.2"
+
+[tasks.run-spin-ett-mar-30]
+cmd = "python Baseline/SPIN.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.3"
+
+[tasks.run-spin-ett-mar-40]
+cmd = "python Baseline/SPIN.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.4"
+
+[tasks.run-spin-ett-mnar_t-20]
+cmd = "python Baseline/SPIN.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.2"
+
+[tasks.run-spin-ett-mnar_t-30]
+cmd = "python Baseline/SPIN.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.3"
+
+[tasks.run-spin-ett-mnar_t-40]
+cmd = "python Baseline/SPIN.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.4"
+
+[tasks.run-spin-ett-mix-20]
+cmd = "python Baseline/SPIN.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2"
+
+[tasks.run-spin-ett-mix-30]
+cmd = "python Baseline/SPIN.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3"
+
+[tasks.run-spin-ett-mix-40]
+cmd = "python Baseline/SPIN.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4"
+
+[tasks.run-spin-italy-mar-20]
+cmd = "python Baseline/SPIN.py --dataset italy_air_quality --mask_type mar --missing_rate 0.2"
+
+[tasks.run-spin-italy-mar-30]
+cmd = "python Baseline/SPIN.py --dataset italy_air_quality --mask_type mar --missing_rate 0.3"
+
+[tasks.run-spin-italy-mar-40]
+cmd = "python Baseline/SPIN.py --dataset italy_air_quality --mask_type mar --missing_rate 0.4"
+
+[tasks.run-spin-italy-mnar_x-20]
+cmd = "python Baseline/SPIN.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.2"
+
+[tasks.run-spin-italy-mnar_x-30]
+cmd = "python Baseline/SPIN.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.3"
+
+[tasks.run-spin-italy-mnar_x-40]
+cmd = "python Baseline/SPIN.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.4"
+
+[tasks.run-spin-italy-mix-20]
+cmd = "python Baseline/SPIN.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2"
+
+[tasks.run-spin-italy-mix-30]
+cmd = "python Baseline/SPIN.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3"
+
+[tasks.run-spin-italy-mix-40]
+cmd = "python Baseline/SPIN.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4"
+
+# ---- ours ----
+[tasks.run-ours]
+cmd = "python Ours/run.py --run_name full"
+description = "Run UniMiss Ours with default settings"
+
+[tasks.run-ours-ett-mar-20]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.2 --experiment_group main --run_name full"
+
+[tasks.run-ours-ett-mar-30]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.3 --experiment_group main --run_name full"
+
+[tasks.run-ours-ett-mar-40]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.4 --experiment_group main --run_name full"
+
+[tasks.run-ours-ett-mnar_t-20]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.2 --experiment_group main --run_name full"
+
+[tasks.run-ours-ett-mnar_t-30]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.3 --experiment_group main --run_name full"
+
+[tasks.run-ours-ett-mnar_t-40]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mnar_t --missing_rate 0.4 --experiment_group main --run_name full"
+
+[tasks.run-ours-ett-mix-20]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group main --run_name full"
+
+[tasks.run-ours-ett-mix-30]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3 --experiment_group main --run_name full"
+
+[tasks.run-ours-ett-mix-40]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4 --experiment_group main --run_name full"
+
+[tasks.run-ours-italy-mar-20]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mar --missing_rate 0.2 --experiment_group main --run_name full"
+
+[tasks.run-ours-italy-mar-30]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mar --missing_rate 0.3 --experiment_group main --run_name full"
+
+[tasks.run-ours-italy-mar-40]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mar --missing_rate 0.4 --experiment_group main --run_name full"
+
+[tasks.run-ours-italy-mnar_x-20]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.2 --experiment_group main --run_name full"
+
+[tasks.run-ours-italy-mnar_x-30]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.3 --experiment_group main --run_name full"
+
+[tasks.run-ours-italy-mnar_x-40]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mnar_x --missing_rate 0.4 --experiment_group main --run_name full"
+
+[tasks.run-ours-italy-mix-20]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group main --run_name full"
+
+[tasks.run-ours-italy-mix-30]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group main --run_name full"
+
+[tasks.run-ours-italy-mix-40]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group main --run_name full"
+
+# ================================================================
+# OURS: ABLATION — mix scenario, both datasets, all missing rates
+# ================================================================
+# ETT ablation: mix × {0.2, 0.3, 0.4} × {no_oo, no_om, no_mm, no_gate}
+[tasks.abl-ett-20-no-oo]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_oo --no-use-oo"
+[tasks.abl-ett-20-no-om]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_om --no-use-om"
+[tasks.abl-ett-20-no-mm]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_mm --no-use-mm"
+[tasks.abl-ett-20-no-gate]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_gate --no-use-stage2-gate"
+
+[tasks.abl-ett-30-no-oo]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_oo --no-use-oo"
+[tasks.abl-ett-30-no-om]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_om --no-use-om"
+[tasks.abl-ett-30-no-mm]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_mm --no-use-mm"
+[tasks.abl-ett-30-no-gate]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_gate --no-use-stage2-gate"
+
+[tasks.abl-ett-40-no-oo]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_oo --no-use-oo"
+[tasks.abl-ett-40-no-om]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_om --no-use-om"
+[tasks.abl-ett-40-no-mm]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_mm --no-use-mm"
+[tasks.abl-ett-40-no-gate]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_gate --no-use-stage2-gate"
+
+# IAQ ablation: mix × {0.2, 0.3, 0.4} × {no_oo, no_om, no_mm, no_gate}
+[tasks.abl-italy-20-no-oo]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_oo --no-use-oo"
+[tasks.abl-italy-20-no-om]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_om --no-use-om"
+[tasks.abl-italy-20-no-mm]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_mm --no-use-mm"
+[tasks.abl-italy-20-no-gate]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_gate --no-use-stage2-gate"
+
+[tasks.abl-italy-30-no-oo]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_oo --no-use-oo"
+[tasks.abl-italy-30-no-om]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_om --no-use-om"
+[tasks.abl-italy-30-no-mm]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_mm --no-use-mm"
+[tasks.abl-italy-30-no-gate]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_gate --no-use-stage2-gate"
+
+[tasks.abl-italy-40-no-oo]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_oo --no-use-oo"
+[tasks.abl-italy-40-no-om]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_om --no-use-om"
+[tasks.abl-italy-40-no-mm]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_mm --no-use-mm"
+[tasks.abl-italy-40-no-gate]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_gate --no-use-stage2-gate"
+
+# ================================================================
+# OURS: HYPERPARAMETER — ETT & IAQ, mix/0.2
+# ================================================================
+[tasks.hparam-ett-dmodel-64]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name dmodel_64 --d_model 64"
+[tasks.hparam-ett-dmodel-128]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name dmodel_128 --d_model 128"
+[tasks.hparam-ett-dmodel-256]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name dmodel_256 --d_model 256"
+[tasks.hparam-ett-gate-temp-01]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name gate_temp_01 --gate_temperature 0.1"
+[tasks.hparam-ett-gate-temp-05]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name gate_temp_05 --gate_temperature 0.5"
+[tasks.hparam-ett-gate-temp-20]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name gate_temp_20 --gate_temperature 2.0"
+[tasks.hparam-ett-period-12]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name period_12 --period_len 12"
+[tasks.hparam-ett-period-48]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name period_48 --period_len 48"
+
+[tasks.hparam-italy-dmodel-128]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name dmodel_128 --d_model 128"
+[tasks.hparam-italy-gate-temp-05]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name gate_temp_05 --gate_temperature 0.5"
+[tasks.hparam-italy-period-48]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name period_48 --period_len 48"
+
+# ================================================================
+# OURS: VISUALIZATION — both datasets
+# ================================================================
+[tasks.vis-ett-mix-20]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group visualization --run_name vis_ett_mix20"
+[tasks.vis-italy-mix-20]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group visualization --run_name vis_italy_mix20"
+
+# ================================================================
+# OURS: SCALING / LIGHTWEIGHT
+# ================================================================
+[tasks.scale-ett-lite-s]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group scaling --run_name lite_s --lightweight_level lite_s"
+[tasks.scale-ett-lite-m]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group scaling --run_name lite_m --lightweight_level lite_m"
+[tasks.scale-ett-tiny]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group scaling --run_name tiny --lightweight_level tiny"
+[tasks.scale-italy-lite-s]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group scaling --run_name lite_s --lightweight_level lite_s"
+[tasks.scale-italy-lite-m]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group scaling --run_name lite_m --lightweight_level lite_m"
+[tasks.scale-italy-tiny]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group scaling --run_name tiny --lightweight_level tiny"
+
+# ================================================================
+# PARAMETER COUNTING
+# ================================================================
+[tasks.count-ours-params]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mar --missing_rate 0.2 --experiment_group param_count --run_name params"
+
+# ================================================================
+# BATCH ORCHESTRATION — one-command experiment groups
+# ================================================================
+
+# --- Main table (paper focus: Mix scenario, both datasets) ---
+[tasks.batch-main-table]
+cmd = "echo '[batch] Main table experiments complete'"
+description = "Run all models × Mix × all rates × both datasets (paper main table)"
+depends-on = [
+    "run-mean-ett-mix-20", "run-mean-ett-mix-30", "run-mean-ett-mix-40",
+    "run-brits-ett-mix-20", "run-brits-ett-mix-30", "run-brits-ett-mix-40",
+    "run-saits-ett-mix-20", "run-saits-ett-mix-30", "run-saits-ett-mix-40",
+    "run-timesnet-ett-mix-20", "run-timesnet-ett-mix-30", "run-timesnet-ett-mix-40",
+    "run-imputeformer-ett-mix-20", "run-imputeformer-ett-mix-30", "run-imputeformer-ett-mix-40",
+    "run-spin-ett-mix-20", "run-spin-ett-mix-30", "run-spin-ett-mix-40",
+    "run-mtsci-ett-mix-20", "run-mtsci-ett-mix-30", "run-mtsci-ett-mix-40",
+    "run-fgti-ett-mix-20", "run-fgti-ett-mix-30", "run-fgti-ett-mix-40",
+    "run-ours-ett-mix-20", "run-ours-ett-mix-30", "run-ours-ett-mix-40",
+    "run-mean-italy-mix-20", "run-mean-italy-mix-30", "run-mean-italy-mix-40",
+    "run-brits-italy-mix-20", "run-brits-italy-mix-30", "run-brits-italy-mix-40",
+    "run-saits-italy-mix-20", "run-saits-italy-mix-30", "run-saits-italy-mix-40",
+    "run-timesnet-italy-mix-20", "run-timesnet-italy-mix-30", "run-timesnet-italy-mix-40",
+    "run-imputeformer-italy-mix-20", "run-imputeformer-italy-mix-30", "run-imputeformer-italy-mix-40",
+    "run-spin-italy-mix-20", "run-spin-italy-mix-30", "run-spin-italy-mix-40",
+    "run-mtsci-italy-mix-20", "run-mtsci-italy-mix-30", "run-mtsci-italy-mix-40",
+    "run-fgti-italy-mix-20", "run-fgti-italy-mix-30", "run-fgti-italy-mix-40",
+    "run-ours-italy-mix-20", "run-ours-italy-mix-30", "run-ours-italy-mix-40",
+]
+
+# --- Supplementary (MAR & MNAR, for appendix) ---
+[tasks.batch-supplementary-ett]
+cmd = "echo '[batch] ETT MAR+MNAR supplementary complete'"
+description = "All models × ETT × MAR + MNAR_T × all rates"
+depends-on = [
+    "run-mean-ett-mar-20", "run-mean-ett-mar-30", "run-mean-ett-mar-40",
+    "run-mean-ett-mnar_t-20", "run-mean-ett-mnar_t-30", "run-mean-ett-mnar_t-40",
+    "run-brits-ett-mar-20", "run-brits-ett-mar-30", "run-brits-ett-mar-40",
+    "run-brits-ett-mnar_t-20", "run-brits-ett-mnar_t-30", "run-brits-ett-mnar_t-40",
+    "run-saits-ett-mar-20", "run-saits-ett-mar-30", "run-saits-ett-mar-40",
+    "run-saits-ett-mnar_t-20", "run-saits-ett-mnar_t-30", "run-saits-ett-mnar_t-40",
+    "run-timesnet-ett-mar-20", "run-timesnet-ett-mar-30", "run-timesnet-ett-mar-40",
+    "run-timesnet-ett-mnar_t-20", "run-timesnet-ett-mnar_t-30", "run-timesnet-ett-mnar_t-40",
+    "run-imputeformer-ett-mar-20", "run-imputeformer-ett-mar-30", "run-imputeformer-ett-mar-40",
+    "run-imputeformer-ett-mnar_t-20", "run-imputeformer-ett-mnar_t-30", "run-imputeformer-ett-mnar_t-40",
+    "run-spin-ett-mar-20", "run-spin-ett-mar-30", "run-spin-ett-mar-40",
+    "run-spin-ett-mnar_t-20", "run-spin-ett-mnar_t-30", "run-spin-ett-mnar_t-40",
+    "run-mtsci-ett-mar-20", "run-mtsci-ett-mar-30", "run-mtsci-ett-mar-40",
+    "run-mtsci-ett-mnar_t-20", "run-mtsci-ett-mnar_t-30", "run-mtsci-ett-mnar_t-40",
+    "run-fgti-ett-mar-20", "run-fgti-ett-mar-30", "run-fgti-ett-mar-40",
+    "run-fgti-ett-mnar_t-20", "run-fgti-ett-mnar_t-30", "run-fgti-ett-mnar_t-40",
+    "run-ours-ett-mar-20", "run-ours-ett-mar-30", "run-ours-ett-mar-40",
+    "run-ours-ett-mnar_t-20", "run-ours-ett-mnar_t-30", "run-ours-ett-mnar_t-40",
+]
+
+[tasks.batch-supplementary-italy]
+cmd = "echo '[batch] IAQ MAR+MNAR supplementary complete'"
+description = "All models × IAQ × MAR + MNAR_X × all rates"
+depends-on = [
+    "run-mean-italy-mar-20", "run-mean-italy-mar-30", "run-mean-italy-mar-40",
+    "run-mean-italy-mnar_x-20", "run-mean-italy-mnar_x-30", "run-mean-italy-mnar_x-40",
+    "run-brits-italy-mar-20", "run-brits-italy-mar-30", "run-brits-italy-mar-40",
+    "run-brits-italy-mnar_x-20", "run-brits-italy-mnar_x-30", "run-brits-italy-mnar_x-40",
+    "run-saits-italy-mar-20", "run-saits-italy-mar-30", "run-saits-italy-mar-40",
+    "run-saits-italy-mnar_x-20", "run-saits-italy-mnar_x-30", "run-saits-italy-mnar_x-40",
+    "run-timesnet-italy-mar-20", "run-timesnet-italy-mar-30", "run-timesnet-italy-mar-40",
+    "run-timesnet-italy-mnar_x-20", "run-timesnet-italy-mnar_x-30", "run-timesnet-italy-mnar_x-40",
+    "run-imputeformer-italy-mar-20", "run-imputeformer-italy-mar-30", "run-imputeformer-italy-mar-40",
+    "run-imputeformer-italy-mnar_x-20", "run-imputeformer-italy-mnar_x-30", "run-imputeformer-italy-mnar_x-40",
+    "run-spin-italy-mar-20", "run-spin-italy-mar-30", "run-spin-italy-mar-40",
+    "run-spin-italy-mnar_x-20", "run-spin-italy-mnar_x-30", "run-spin-italy-mnar_x-40",
+    "run-mtsci-italy-mar-20", "run-mtsci-italy-mar-30", "run-mtsci-italy-mar-40",
+    "run-mtsci-italy-mnar_x-20", "run-mtsci-italy-mnar_x-30", "run-mtsci-italy-mnar_x-40",
+    "run-fgti-italy-mar-20", "run-fgti-italy-mar-30", "run-fgti-italy-mar-40",
+    "run-fgti-italy-mnar_x-20", "run-fgti-italy-mnar_x-30", "run-fgti-italy-mnar_x-40",
+    "run-ours-italy-mar-20", "run-ours-italy-mar-30", "run-ours-italy-mar-40",
+    "run-ours-italy-mnar_x-20", "run-ours-italy-mnar_x-30", "run-ours-italy-mnar_x-40",
+]
+
+# --- All ablation ---
+[tasks.batch-ablation]
+cmd = "echo '[batch] All ablation experiments complete'"
+description = "Full ablation grid: ETT+IAQ × mix × {0.2,0.3,0.4} × {no_oo,no_om,no_mm,no_gate}"
+depends-on = [
+    "abl-ett-20-no-oo", "abl-ett-20-no-om", "abl-ett-20-no-mm", "abl-ett-20-no-gate",
+    "abl-ett-30-no-oo", "abl-ett-30-no-om", "abl-ett-30-no-mm", "abl-ett-30-no-gate",
+    "abl-ett-40-no-oo", "abl-ett-40-no-om", "abl-ett-40-no-mm", "abl-ett-40-no-gate",
+    "abl-italy-20-no-oo", "abl-italy-20-no-om", "abl-italy-20-no-mm", "abl-italy-20-no-gate",
+    "abl-italy-30-no-oo", "abl-italy-30-no-om", "abl-italy-30-no-mm", "abl-italy-30-no-gate",
+    "abl-italy-40-no-oo", "abl-italy-40-no-om", "abl-italy-40-no-mm", "abl-italy-40-no-gate",
+]
+
+# --- All hyperparameter ---
+[tasks.batch-hyperparameter]
+cmd = "echo '[batch] Hyperparameter experiments complete'"
+description = "Hyperparameter sensitivity analysis"
+depends-on = [
+    "hparam-ett-dmodel-64", "hparam-ett-dmodel-128", "hparam-ett-dmodel-256",
+    "hparam-ett-gate-temp-01", "hparam-ett-gate-temp-05", "hparam-ett-gate-temp-20",
+    "hparam-ett-period-12", "hparam-ett-period-48",
+    "hparam-italy-dmodel-128", "hparam-italy-gate-temp-05", "hparam-italy-period-48",
+]
+
+# --- All scaling ---
+[tasks.batch-scaling]
+cmd = "echo '[batch] Scaling experiments complete'"
+description = "Lightweight / scalability analysis"
+depends-on = [
+    "scale-ett-lite-s", "scale-ett-lite-m", "scale-ett-tiny",
+    "scale-italy-lite-s", "scale-italy-lite-m", "scale-italy-tiny",
+]
+
+# ================================================================
+# MIX RATIO SENSITIVITY — MAR:MNAR = {20:80, 50:50(default), 80:20}
+# Ours + 3 strongest baselines (FGTI, MTSCI, ImputeFormer)
+# Fixed: mix scenario, missing_rate 0.2, both datasets
+# ================================================================
+
+# ---- Ours ratio sweep ----
+[tasks.ratio-ours-ett-mar20]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --mar_ratio 0.2 --experiment_group main --run_name ratio_mar20"
+[tasks.ratio-ours-ett-mar80]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --mar_ratio 0.8 --experiment_group main --run_name ratio_mar80"
+[tasks.ratio-ours-italy-mar20]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --mar_ratio 0.2 --experiment_group main --run_name ratio_mar20"
+[tasks.ratio-ours-italy-mar80]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --mar_ratio 0.8 --experiment_group main --run_name ratio_mar80"
+
+# ---- FGTI ratio sweep ----
+[tasks.ratio-fgti-ett-mar20]
+cmd = "python Baseline/FGTI.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --mar_ratio 0.2"
+[tasks.ratio-fgti-ett-mar80]
+cmd = "python Baseline/FGTI.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --mar_ratio 0.8"
+[tasks.ratio-fgti-italy-mar20]
+cmd = "python Baseline/FGTI.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --mar_ratio 0.2"
+[tasks.ratio-fgti-italy-mar80]
+cmd = "python Baseline/FGTI.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --mar_ratio 0.8"
+
+# ---- MTSCI ratio sweep ----
+[tasks.ratio-mtsci-ett-mar20]
+cmd = "python Baseline/MTSCI.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --mar_ratio 0.2"
+[tasks.ratio-mtsci-ett-mar80]
+cmd = "python Baseline/MTSCI.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --mar_ratio 0.8"
+[tasks.ratio-mtsci-italy-mar20]
+cmd = "python Baseline/MTSCI.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --mar_ratio 0.2"
+[tasks.ratio-mtsci-italy-mar80]
+cmd = "python Baseline/MTSCI.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --mar_ratio 0.8"
+
+# ---- ImputeFormer ratio sweep ----
+[tasks.ratio-imputeformer-ett-mar20]
+cmd = "python Baseline/ImputeFormer.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --mar_ratio 0.2"
+[tasks.ratio-imputeformer-ett-mar80]
+cmd = "python Baseline/ImputeFormer.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --mar_ratio 0.8"
+[tasks.ratio-imputeformer-italy-mar20]
+cmd = "python Baseline/ImputeFormer.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --mar_ratio 0.2"
+[tasks.ratio-imputeformer-italy-mar80]
+cmd = "python Baseline/ImputeFormer.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --mar_ratio 0.8"
+
+# ---- Ours ratio visualization (gate routing under different compositions) ----
+[tasks.ratio-vis-ours-ett-mar20]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --mar_ratio 0.2 --experiment_group visualization --run_name vis_ratio_mar20"
+[tasks.ratio-vis-ours-ett-mar80]
+cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --mar_ratio 0.8 --experiment_group visualization --run_name vis_ratio_mar80"
+
+# ---- Batch: all ratio experiments ----
+[tasks.batch-ratio]
+cmd = "echo '[batch] Mix ratio sensitivity experiments complete'"
+description = "MAR:MNAR ratio sensitivity: Ours + FGTI + MTSCI + ImputeFormer × {20:80, 80:20} × both datasets"
+depends-on = [
+    "ratio-ours-ett-mar20", "ratio-ours-ett-mar80",
+    "ratio-ours-italy-mar20", "ratio-ours-italy-mar80",
+    "ratio-fgti-ett-mar20", "ratio-fgti-ett-mar80",
+    "ratio-fgti-italy-mar20", "ratio-fgti-italy-mar80",
+    "ratio-mtsci-ett-mar20", "ratio-mtsci-ett-mar80",
+    "ratio-mtsci-italy-mar20", "ratio-mtsci-italy-mar80",
+    "ratio-imputeformer-ett-mar20", "ratio-imputeformer-ett-mar80",
+    "ratio-imputeformer-italy-mar20", "ratio-imputeformer-italy-mar80",
+    "ratio-vis-ours-ett-mar20", "ratio-vis-ours-ett-mar80",
+]
+
+# --- Complete paper experiment suite ---
+[tasks.batch-all]
+cmd = "echo '[batch] ALL experiments complete'"
+description = "Run the entire CIKM 2026 experiment suite"
+depends-on = [
+    "batch-main-table",
+    "batch-supplementary-ett",
+    "batch-supplementary-italy",
+    "batch-ablation",
+    "batch-hyperparameter",
+    "batch-scaling",
+    "batch-ratio",
+    "vis-ett-mix-20",
+    "vis-italy-mix-20",
+    "count-ours-params",
+]
+
+[system-requirements]
+cuda = "12.0"
+
+[dependencies]
+# 3. 加上 == 号，消除警告
+python = "==3.9.23"
+pip = "==25.2"
+
+
+[pypi-options]
+index-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+
+[pypi-dependencies]
+# --- 深度学习核心 (Pixi 会自动解析出所需的 nvidia-* 依赖) ---
+torch = "==2.8.0"
+torchvision = "==0.23.0"
+transformers = "==4.30.2"
+reformer-pytorch = "==1.4.4"
+timm = "==1.0.21"
+
+# --- 科学计算 ---
+numpy = "==1.26.4"
+pandas = "==1.5.3"
+scipy = "==1.10.1"
+scikit-learn = "==1.6.1"
+networkx = "==3.2.1"
+umap-learn = "==0.5.9.post2"
+torchsde = "==0.2.6"
+torchcde = "==0.2.5"
+torchdiffeq = "==0.2.5"
+
+# --- 可视化 ---
+matplotlib = "==3.7.1"
+plotly = "==6.4.0"
+altair = "==5.5.0"
+pillow = "==11.3.0"
+
+# --- 工具 ---
+tqdm = "==4.67.1"
+requests = "==2.32.5"
+beautifulsoup4 = "==4.14.2"
+pyyaml = "==6.0.3"
+gdown = "==5.2.0"
+huggingface-hub = "==0.24.6"
+
+# --- PyPOTS 额外依赖（必需） ---
+h5py = ">=3.9.0"
+seaborn = ">=0.13.2"
+tensorboard = ">=2.17.0"
+tsdb = ">=0.7.1"
+pygrinder = ">=0.7.0"
+benchpots = ">=0.4.0"
+ai4ts = "==0.0.3"
+pypots = "*"
+
+# --- PyG / GNN 依赖（SPIN 需要） ---
+torch-geometric = ">=2.6.0"

@@ -1,0 +1,32 @@
+\section{Experiments}
+
+\subsection{Datasets and Missingness Settings}
+We follow the repository-wide benchmark protocol: Electricity Transformer Temperature (ETT) and Italy Air Quality (IAQ), evaluated under MAR, MNAR, and Mix mechanisms with missing rates $\{20\%,30\%,40\%\}$. For Mix, MNAR and MAR masks are composed sequentially with matched proportion.
+
+\subsection{Baselines}
+We compare against Mean, BRITS \cite{cao2018brits}, SAITS \cite{du2023saits}, ImputeFormer \cite{liu2024imputeformer}, SPIN \cite{marisca2022spin}, TimesNet \cite{wu2023timesnet}, FGTI \cite{chen2024fgti}, and MTSCI \cite{liu2024mtsci}. This set follows the local CIKM baseline scope and covers OO/OM/MM-relevant families.
+
+\subsection{Metrics and Protocol}
+Metrics are MAE, RMSE, MRE, and MAPE. We use seeds $\{3407,3408,3409\}$ and report per-seed plus average performance. The output pipeline stores both seed-wise and aggregated artifacts in a unified directory layout for reproducibility.
+
+\subsection{Main Results Plan}
+Main results focus on mixed missingness, where Stage-II mechanism-aware regulation is most necessary. MAR and MNAR are reported as complementary views to show how UniMiss behaves when one recovery preference dominates. The codebase uses a unified output layout so the manuscript tables can be filled directly from the same run artifacts.
+
+\subsection{Ablation Study}
+Core ablations:
+\begin{itemize}
+\item \textbf{w/o OO foundation}
+\item \textbf{w/o OM interaction routing}
+\item \textbf{w/o MM missing-structure experts}
+\item \textbf{w/o Stage-II mechanism-aware gate}
+\end{itemize}
+These ablations are executed by explicit runtime switches in one unified runner.
+
+\subsection{Hyperparameter and Sensitivity}
+We include sensitivity experiments on expert scale, branch capacity, and gate softness/temperature, following the draft requirement that mechanism-routing behavior should be analyzed, not only headline accuracy.
+
+\subsection{Visualization and Interpretability}
+We visualize (1) sample-level gate weight distribution, (2) case studies contrasting MAR-like vs. MNAR-like segments, and (3) mechanism prompt projection (e.g., PCA/t-SNE) to inspect branch preference separation.
+
+\subsection{Lightweight and Scalability Evaluation}
+We include UniMiss-Full and lightweight variants, reporting parameter count, compute proxy, memory/latency traces, and behavior under larger temporal span, variable dimension, and missing-pattern complexity.

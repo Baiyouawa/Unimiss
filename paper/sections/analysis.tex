@@ -1,0 +1,17 @@
+\section{Discussion and Analysis}
+
+\subsection{Why Explicit MM Matters}
+The local draft emphasizes that many prior models can touch missing-side coupling but rarely expose it as a first-class, routeable component. UniMiss promotes MM from implicit side effect to explicit branch objective. This improves interpretability and creates direct control for mechanism-sensitive ablation.
+
+\subsection{Role Separation vs. Shared Backbone}
+UniMiss decouples role assignment:
+\begin{itemize}
+\item OO provides stable observed context.
+\item OM answers ``which observed evidence is needed for this missing position.''
+\item MM answers ``which missing-structure pattern governs this position.''
+\item Stage-II gate determines branch preference under MAR/MNAR mixture.
+\end{itemize}
+This decomposition is directly aligned with the motivation in the project draft and avoids overloading one backbone with all responsibilities.
+
+\subsection{Implications for Mixed Missingness}
+The key analytical claim of UniMiss is not merely that multiple branches exist, but that different missing positions should prefer different recovery evidence. Once MAR-like and MNAR-like regions co-exist in one sequence, a single shared recovery rule becomes structurally insufficient. The explicit Stage-II gate turns this mechanism preference into a visible decision variable rather than an implicit side effect of backbone capacity.

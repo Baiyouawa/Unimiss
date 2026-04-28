@@ -1,0 +1,24 @@
+\section{Introduction}
+
+Time series missingness is usually not homogeneous. In practical data collection systems, random sensor dropout, mechanism-driven suppression, and structured co-missing events can appear simultaneously. This leads to mixed settings where MAR-like and MNAR-like missing positions coexist within one sequence. Under such conditions, applying a single uniform imputation rule is often insufficient.
+
+Recent imputation baselines have significantly improved recovery quality, including recurrent models, attention-based models, graph-temporal models, and generative denoising models \cite{cao2018brits,du2023saits,liu2024imputeformer,marisca2022spin,wu2023timesnet,chen2024fgti,liu2024mtsci}. However, based on our local benchmark review and CIKM draft positioning, most prior methods still couple multiple dependency types in a shared backbone: observed-to-observed context (OO), observed-to-missing interaction (OM), and missing-to-missing structure (MM). In particular, MM is rarely promoted to an explicit branch with dedicated routing and interpretation.
+
+This work targets two concrete gaps. First, existing pipelines often treat missingness as random noise and under-model missing-side structure. Second, in mixed MAR/MNAR scenarios, different missing positions may require different recovery dependencies; static fusion cannot reliably reflect this variation.
+
+To address these issues, we propose UniMiss with an explicit decomposition:
+\begin{itemize}
+\item \textbf{OO foundational context path}: extracts stable observed-side context and decouples it from missing-side decision making.
+\item \textbf{OM interaction-oriented expert branch}: performs prompt-conditioned routing over observed evidence experts for each target missing position.
+\item \textbf{MM missing-structure expert branch}: explicitly models co-missing topology, periodic evidence, and extreme-event clues via missing-side experts.
+\item \textbf{Stage-II mechanism-aware soft gate}: uses mechanism prompt and local/global missing summaries to adaptively balance OM and MM under mixed missingness.
+\end{itemize}
+
+The paper draft is tightly aligned with the repository implementation scope: (1) baseline-consistent data protocol, (2) modular ablation switches for OO/OM/MM/Stage-II, (3) auxiliary studies including hyperparameter, visualization, and scalability tracks, and (4) ACM CIKM-style manuscript structure.
+
+Our main contributions are summarized as follows:
+\begin{itemize}
+\item We provide a mechanism-aware architecture that explicitly separates OO, OM, and MM responsibilities instead of relying on a monolithic imputation backbone.
+\item We design a Stage-II MAR-vs-MNAR soft gate for position-wise adaptive fusion between OM and MM in mixed missingness settings.
+\item We build a unified experimental protocol and code interface with switchable module-level ablations and reproducible analysis hooks.
+\end{itemize}

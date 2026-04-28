@@ -1,0 +1,308 @@
+
+=== PAGE 1 ===
+ImputeFormer: Low Rankness-Induced Transformers for
+Generalizable Spatiotemporal Imputation
+Tong Nie1, Guoyang Qin1, Wei Ma2, Yuewen Mei1, Jian Sun1,†
+1Tongji University, 2The Hong Kong Polytechnic University
+nietong@tongji.edu.cn, 2015qgy@tongji.edu.cn, wei.w.ma@polyu.edu.hk,
+meiyuewen@tongji.edu.cn, sunjian@tongji.edu.cn
+ABSTRACT
+Missing data is a pervasive issue in both scientific and engineering
+tasks, especially for the modeling of spatiotemporal data. This prob-
+lem attracts many studies to contribute to data-driven solutions.
+Existing imputation solutions mainly include low-rank models and
+deep learning models. The former assumes general structural pri-
+ors but has limited model capacity. The latter possesses salient
+features of expressivity but lacks prior knowledge of the underly-
+ing spatiotemporal structures. Leveraging the strengths of both two
+paradigms, we demonstrate a low rankness-induced Transformer
+to achieve a balance between strong inductive bias and high model
+expressivity. The exploitation of the inherent structures of spa-
+tiotemporal data enables our model to learn balanced signal-noise
+representations, making it generalizable for a variety of imputation
+problems. We demonstrate its superiority in terms of accuracy, effi-
+ciency, and versatility in heterogeneous datasets, including traffic
+flow, solar energy, smart meters, and air quality. Promising empiri-
+cal results provide strong conviction that incorporating time series
+primitives, such as low-rankness, can substantially facilitate the
+development of a generalizable model to approach a wide range of
+spatiotemporal imputation problems. The model implementation is
+available at: https://github.com/tongnie/ImputeFormer.
+CCS CONCEPTS
+•Information systems → Spatial-temporal systems.
+KEYWORDS
+Missing Data, Data Imputation, Transformers, Low-Rank Modeling,
+Spatiotemporal Data, Time Series.
+ACM Reference Format:
+Tong Nie, Guoyang Qin, Wei Ma, Yuewen Mei, and Jian Sun. 2024. Im-
+puteFormer: Low Rankness-Induced Transformers for Generalizable Spa-
+tiotemporal Imputation. In Proceedings of the 30th ACM SIGKDD Conference
+on Knowledge Discovery and Data Mining (KDD ’24), August 25–29, 2024,
+Barcelona, Spain. ACM, New York, NY, USA, 12 pages. https://doi.org/xx
+1 INTRODUCTION
+Missing data is a common challenge in detection systems, especially
+in high-resolution monitoring systems. Factors such as inclement
+† Jian Sun is the corresponding author.
+This work is licensed under a Creative Commons Attribution
+International 4.0 License.
+KDD ’24, August 25–29, 2024, Barcelona, Spain.
+© 2024 Copyright held by the owner/author(s).
+ACM ISBN xx.
+https://doi.org/xx
+weather, energy supply, and sensor service time can adversely affect
+the quality of monitoring data [5]. Given these factors, data missing
+rates can be quite high. For example, the air quality measurements in
+the Urban Air project [48] contain about 30% invalid records due to
+station malfunction. Similarly, subsets of Uber Movement data, such
+as New York City, have an approximate 85% of missing records. This
+problem encourages researchers to develop advanced models that
+can exploit limited observations to impute missing values. Extensive
+research has contributed to data-driven methods for this purpose,
+especially in the field of spatiotemporal data [5, 6, 28, 30, 40, 44].
+Generally, there are two research paradigms for imputing miss-
+ing data. The first paradigm uses low-rank and low-dimensional
+analytical models, such as [ 4, 6, 20, 28, 40], which assumes the
+data has a well-structured matrix or tensor form. These models
+utilize the algebraic properties of the assumed structure, such as
+low-rankness, low nuclear norm, and spectrum sparsity (we use the
+term “low-rank” as a proxy), to impute missing values [25]. While
+simple low-rank models like matrix factorization and tensor com-
+pletion can effectively handle incomplete data, they may struggle
+with capturing complex patterns, such as nonlinearity and nonsta-
+tionarity. With strong inductive bias, these models can excessively
+smooth the reconstructed data, filtering out informative signals,
+and generating oversmoothing reconstructions in some cases [27].
+The second paradigm uses deep learning-based imputation mod-
+els. These models learn the dynamics of the data-generating process
+and demonstrate improved performance [1, 2, 7, 10, 19, 26]. How-
+ever, despite the success of these models on various benchmarks,
+there are still costs and difficulties that need further attention. First,
+such data-intensive methods require a substantial amount of train-
+ing expenses due to the complex model structures in deep learning,
+such as probabilistic diffusion and bidirectional recurrence [1, 36].
+This can consume significant computational memory and resources,
+making them less efficient for real-time deployment. Second, empir-
+ical loss-based learning methods, without the guidance of physics or
+data structures, are prone to overfitting and perform poorly when
+applied to tasks fall outside of the distribution of training data [47].
+With the shift of focus in the field of deep imputation from RNNs
+and diffusion models to Transformers [ 10, 24, 26], Transformer-
+related architectures have gained significant attention due to their
+potential to provide efficient generative output and high expressiv-
+ity, enabling more effective imputations compared to autoregression-
+based models. Additionally, Transformers are considered founda-
+tional architectures for general time series forecasting [11]. How-
+ever, the effectiveness of applying Transformers to general data
+imputation tasks requires further investigation. Modern deep learn-
+ing techniques associated with these architectures, such as self-
+attention and residual connections, can unintentionally preserve
+arXiv:2312.01728v3  [cs.LG]  29 May 2024
+
+=== PAGE 2 ===
+KDD ’24, August 25–29, 2024, Barcelona, Spain. Tong Nie et al.
+a.
+IncompleteIncomplete
+Sharp
+Smooth Ground truthGround truth
+Signal Noise Signal Noise
+w/ structural priors
+low expressivity
+b. Paradigm 1: Low-rank/-dim imputation
+ReconstructedReconstructed
+Sharp
+Smooth Signal Noise
+c. Paradigm 2: Deep learning imputation
+w/o structural priors
+high expressivity
+ReconstructedReconstructed
+Sharp
+Smooth Signal Noise
+ReconstructedReconstructed
+w/ structural priors
+high expressivity 
+(+model priors)
+d. Low rankness-induced deep learning
+Ours: ImputeFormerOurs: ImputeFormer
+Sharp
+Balanced
+Smooth
+Singular valuesSingular values
+Spatiotemporal matrix
+Figure 1: (a) The distribution of singular values in spatiotemporal data is long-tailed. The existence of missing data can increase
+its rank (or singular values). (b) Low-rank models can filter out informative signals and generate a smooth reconstruction,
+resulting in truncating too much energy in the left part of its spectrum. (c) Deep models can preserve high-frequency noise and
+generate sharp imputations, maintaining too much energy for the right part of the singular spectrum. With the generality of
+low-rank models and the expressivity of deep models, ImputeFormer achieves a signal-noise balance for accurate imputation.
+high-frequency noise in data as informative signals [34]. This can
+lead the model to learn high-rank representations that violate the
+natural distribution of data. Furthermore, the existence of missing
+data can introduce spurious correlations between “tokens, ” posing
+challenges to these architectures. Considering the above-mentioned
+concerns, incorporating a low-rank inductive bias into the Trans-
+former framework seems to provide a chance to improve both the
+effectiveness and efficiency in spatiotemporal imputation.
+In summary, matrix- and tensor-based models offer useful priors
+for spatiotemporal data, such as low-rankness and sparsity. How-
+ever, their ability to represent data is limited (see Fig. 1(b)). On
+the other hand, deep learning models, particularly Transformers,
+excel at learning representations but lack prior knowledge of data
+generation (see Fig. 1(c)). As the demand for a versatile and adapt-
+able model that can handle various imputation problems in reality
+increases, such as cross-domain datasets, different observation con-
+ditions, highly sparse measurements, and different input patterns,
+it becomes apparent that existing advanced solutions, typically
+evaluated on limited tasks with simple settings, may not be general-
+izable. Hence, there is a temptation to merge these two paradigms
+and utilize their respective strengths to investigate an alternative
+paradigm that can effectively handle complex imputation scenarios.
+To this end, in this paper we leverage the structural priors of low-
+rankness to generalize the canonical Transformer (see Fig. 1(d)) in
+general spatiotemporal imputation tasks. Our approach, referred to
+as Imputation Transformers (ImputeFormer), imposes low-rankness
+and achieves attention factorization equivalently by introducing
+a projected attention mechanism on the temporal dimension and
+an embedded attention on the spatial dimension. Additionally, we
+propose a Fourier sparsity loss to regularize the solution’s spectrum.
+By inheriting the merits of both low-rank and deep learning models,
+it has achieved state-of-the-art imputation performance on various
+benchmarks. Our main contributions are summarized as follows:
+(1) We are among the first to empower Transformers with low-
+rankness inductive bias to achieve a balance between signal
+and noise for general spatiotemporal data imputation;
+(2) Compared to state-of-the-art benchmark models, we demon-
+strate the advantages of ImputeFormer in accuracy, effi-
+ciency, and versatility in diverse datasets, such as traffic
+flow, solar energy, electricity consumption, and air quality;
+(3) Comprehensive case studies reveal the model’s interpretabil-
+ity and provide insights into the deep imputation paradigm.
+2 PRELIMINARY
+Notations. This section first introduces some basic notations fol-
+lowing [26]. In a continuously working sensor system with𝑁 static
+detectors at some measurement positions, spatiotemporal data with
+context information can be obtained: (1) X𝑡:𝑡 +𝑇 ∈ R𝑁 ×𝑇 : The ob-
+served data matrix containing missing values collected by all sen-
+sors over a time interval T = {𝑡, . . . , 𝑡 + 𝑇 }, where 𝑇 represents the
+observation period; (2) Y𝑡:𝑡 +𝑇 ∈ R𝑁 ×𝑇 : The ground truth data ma-
+trix used for evaluation; (3) U𝑡:𝑡 +𝑇 ∈ R𝑇 ×𝑑u: Exogenous variables
+describe time series, such as the time of day, day of week, and week
+of month information; (4) V ∈ R𝑁 ×𝑑v: Meta information of sensors,
+such as detector ID and location of installation.
+Problem Formulation. The multivariate time series imputation
+problem defines an inductive learning and inference process:
+Learning bΘ = arg min
+Θ
+∑︁
+𝑡 ∈ T
+ℓ (NN({x𝑡 , u𝑡 , m𝑡 }, V|Θ), x𝑡 ) ,
+Inferencebx𝑡 ′ = NN({x𝑡 ′, u𝑡 ′, m𝑡 ′ }, V|bΘ), ∀{𝑡 ′ . . . 𝑡′ + 𝑇 },
+(1)
+where NN(·|Θ) is the neural network model parameterized by Θ,
+and the indicator m𝑡 denotes the locations of the masked values
+for training and the locations of the observed values for inference.
+After training the model on observed data, the imputation model
+can act in a different time span than the training set.
+
+=== PAGE 3 ===
+ImputeFormer: Low Rankness-Induced Transformers for Generalizable Spatiotemporal Imputation KDD ’24, August 25–29, 2024, Barcelona, Spain.
+L× Spatial-Temporal Layers
+Spatial interaction
+Spatial Attention
+LayerNorm
+LayerNorm
+FeedForward
+Temporal Attention
+LayerNorm
+LayerNorm
+FeedForward
+Hidden States
+Concat
+Input 
+Emb.
+Positional
+Enc.
+Adaptive
+Emb.
+Temporal Interaction
+Readout
+Imputation
+Low-Rank Pattern in Spatial Attention Map
+Redundancy and Dominance in Time Series
+Fourier Sparsity in Both Space and Time
+Figure 2: Low-rankness in time series and the induced ImputeFormer. (a) Redundancy in time series: PEMS08 data can be
+reasonably reconstructed using only five dominant patterns. (b) Low-rank spatial attention map: the singular values of the
+multivariate attention map show a long-tailed distribution and most of them are small values. (c) Fourier sparsity in both space
+and time axes: both the spatial and temporal signals possess a sparse Fourier spectrum, with most amplitudes close to zero.
+3 RELATED WORK
+Generally, there exist two series of studies on multivariate time
+series imputation, i.e., 1) low-dimensional/rank models and 2) deep
+imputation models. We particularly discuss existing Transformer-
+based solutions to clarify the connections between our models.
+Low-Dimensional/Rank Imputation. Early methods addressed
+the data imputation problem by exploring statistical interpolation
+tools, such as MICE [37]. Recently, low-rank matrix factorization
+[20, 46] and tensor completion [4–6, 28, 30] have emerged as nu-
+merically efficient techniques for spatiotemporal imputation. To in-
+corporate series-related features, TRMF [46] imposed autoregressive
+regularization on the temporal manifold. TiDER [20] decomposed
+the time series into trend, seasonality and bias components under
+the factorization framework. Despite being conceptually intuitive
+and concise, limited capacity hinder their practical effectiveness.
+Deep Learning Imputation. Recent advances in neural time series
+analysis open a new horizon to improve imputation performance.
+Generally, deep imputation methods learn to reconstruct the distri-
+bution of observed data or aggregate pointwise information pro-
+gressively [12]. Representative methods include GRU-D [2], GRUI
+[22], BRITS [1], GAIN [45], E2GAN [23] NAOMI [21], CSDI [36], and
+PriSTI [19]. To exploit the multivariate nature of spatiotemporal
+data, graph neural networks (GNNs) have been adopted to model
+sensor-wise correlations for more complicated missing patterns.
+For example, MDGCN [15] and GACN [44] applied GNNs with RNNs
+for traffic data imputation.IGNNK [42], STAR [14], and STCAGCN [31]
+further tackle the kriging problem, which is a special data impu-
+tation scenario. As a SOTA model and an architectural template
+for GNN-RNNs, GRIN [7] based on message-passing GRUs that pro-
+gressively performed a two-stage forward and backward recurrent
+message aggregation with predefined relational biases.
+Transformers for Time Series Imputation . Transformers [38]
+can aggregate abundant information from arbitrary input elements,
+becoming a natural choice for sequential data imputation. In partic-
+ular, CDSA [24] developed a cross-channel attention that utilizes cor-
+relations in different dimensions. SAITS [10] combined the masked
+imputation task with an observed reconstruction task, and applied
+a diagonally-masked self-attention to hierarchically reconstruct
+sparse data. SPIN [26] achieved SOTA imputation performance by
+conducting a sparse cross-attention and a temporal self-attention on
+all observed spatiotemporal points. However, the high complexity
+of cross-attention hinders its application in larger graphs.
+4 LOW RANKNESS-INDUCED TRANSFORMER
+This section elaborates the ImputeFormer model. The major dif-
+ference between our model and the canonical Transformer is the
+integration of low-rank factorization. Unlike GNNs, ImputeFormer
+does not require a predefined graph due to the global adaptive
+interaction between series. It also bypasses the use of intricate tem-
+poral techniques, such as bidirectional recurrent aggregation, sparse
+cross-attention, and attention masking. Furthermore, it achieves
+linear complexity with respect to spatial and temporal dimensions.
+4.1 Architectural Overview
+The overall structure of the proposed ImputeFormer is shown in
+Fig. 2. The input embedding layer projects sparse observations
+to hidden states in an additional dimension and introduces both
+fixed and learnable embedding into the inputs. Following a time-
+and-graph template [8], TemporalInteraction and SpatialInteraction
+perform global message passing alternatively at all spatiotemporal
+coordinates. Finally, a MLP readout is adopted to output the final
+imputation. This process can be summarized as follows:
+Z (0)
+𝑡:𝑡 +𝑇 =InputEmb(X𝑡:𝑡 +𝑇 , U𝑡:𝑡 +𝑇 , V),
+Z (ℓ+1)
+𝑡:𝑡 +𝑇 =TemporalInteraction(Z (ℓ )
+𝑡:𝑡 +𝑇 ),
+Z (ℓ+1)
+𝑡:𝑡 +𝑇 =SpatialInteraction(Z (ℓ+1)
+𝑡:𝑡 +𝑇 ), ∀ℓ ∈ { 0, . . . 𝐿},
+bX𝑡:𝑡 +𝑇 =Readout(Z (𝐿+1)
+𝑡:𝑡 +𝑇 ).
+(2)
+The canonical Transformer block [38] can be adopted to gather
+spatial-temporal information for imputation. However, we argue
+that directly applying it to the imputation problem is questionable,

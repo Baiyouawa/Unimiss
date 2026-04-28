@@ -1,0 +1,1379 @@
+--- PAGE 1 ---
+2026CIKM 
+AbstractSubm issionDeadline:April10,2026,11:59p.m .
+FullPaperSubm issionDeadline:April17,2026,11:59p.m .AnywhereonEarth(AoE)
+DecisionNotification:EarlyJ uly2026
+1.M otivation：
+备份部分⽂件：
+
+--- PAGE 2 ---
+备份.pdf
+1.1：核⼼动机（已确定）：
+
+--- PAGE 3 ---
+M otivation1：
+现有的⽅法将缺失本⾝视为random noise，忽略了对缺失本⾝的利⽤，尽管有些⽅法利⽤MAR和
+M ANR作为Benchm arks，但它们不是专⻔针对这些缺失机制设计的；（注意他们的⽅法有进⾏
+observed-to-m iss的建模）
+但我们要强调的是对缺失本⾝的建模（Intra-m iss）（M -M ）
+M 1：显式并联合的建模缺失依赖：包括缺失间的依赖+缺失与可观测依赖（M -M ；M -O）
+另外我们的⼯作同时也要建模可观测数据之间的上下⽂（可观测-可观测）（O-O）
+这⾥值得注意的点是：
+我们的⼯作与前⼈⼯作的最⼤区别在于：建模缺失间的依赖（这⾥怎么建模，怎么可以⽤图表达出
+来，怎么针对于我们极值和周期的问题建模都要考虑）
+再就是，我们和前⼈⼀样建模了缺失与可观测（O-M ）的依赖关系，那么我们与前⼈的不同点在哪
+⾥？以及我们如何强调这种联合关系
+M otivation2：
+在基于M 1的想法之后，我们便要思考在联合建模之后，会遇到的问题：
+也就是M AR和M NAR会共同存在于现实缺失场景中，但是这种可观测-缺失以及缺失-缺失变量之间的
+空间关系（变量间相关性）会随着机制发⽣变化；
+也就是说，这种缺失的依赖不是静态不变的，⽽是会随着机制不同产⽣变化的
+M 2：要从空间⻆度（变量间）联合建模，机制驱动的缺失依赖！
+简单来说：就是模型在M AR和M NAR的M ix场景下，能够感知出缺失机制更倾向于哪种机制，如果更
+倾向于M AR，则更倾向于使⽤缺失-可观测依赖；如果更倾向于M NAR，则更倾向于使⽤缺失间依
+赖；
+M otivation2:Inm ixedm issingnesssettings,differentm issingpositionsm ayrequire
+differentrecoverydependencies,soauniform im putationruleisfundam entally
+insufficient.
+在混合缺失场景下，不同缺失位置所需的恢复依赖不同，因此采⽤统⼀、静态的插补不合理
+• M AR下：缺失可以通过周围的可观测值，其他变量和时间上下⽂来推断当前缺失，此时更信O-M ，
+因为O-M 本质是在做：当前M issingPosition需要什么Observedevidence
+• M NAR下：缺失往往和缺失值本⾝或其潜在状态相关，不是简单靠周围有观测就能补出来
+它可能和极端值，异常波动，峰⾕某种M issingtopology（缺失拓扑：缺失位置之间的结构关系，变
+量之间共同缺失的模式和连接关系）有关，此时只靠可观测的数据不够，甚⾄会把关键的信息平均
+掉，此时应该更信M -M ；
+因为M -M 本质是在建模：当前M issingPosition正处在什么缺失结构中
+
+--- PAGE 4 ---
+总体⽽⾔，⽽前⼈⼯作是不区分的，模型会默认所有缺失位置都遵循同⼀种恢复逻辑，但在现实混合
+场景中，不同位置对可观测值/缺失结构的依赖本⾝就不同！因此才要有机制选择的软⻔控模块；
+⽬前来看主要有三个图可以画：
+• M AR/M NAR的样例场景图（注意对应的⽂字解说也要有，图也要形象）
+• M otivation1对应图（注意对于我们的核⼼模块要具象化出来）
+• M otivation2对应图（同样对于我们的核⼼部件要具象化表⽰出来）
+也就是说在设计模型的时候就要注意到这⼀点，想⼀下具体的模块设计该怎么做，⼜可以怎么表达
+2.M ethod：
+2.0：现有Baseline思考：
+BRITS：典型的OM 主导⽅法
+M otivation：
+BRITS的出发点是，传统RNN插补流程往往先对缺失值做静态预填充，再把结果送⼊时序模型，这会
+把“插补”和“时序建模”⼈为拆开，导致模型⽆法在递归过程中动态修正缺失值。它要解决的核⼼
+问题是：怎样让缺失值在序列传播过程中被反复更新，⽽不是被⼀次性固定。
+创新点：
+BRITS的关键创新有两个。第⼀，把缺失值视为递归图中的变量，在forward/backward两个⽅向上
+持续更新，⽽不是只做输⼊端预处理。第⼆，引⼊tem poraldecay与双向⼀致性，使模型能够根据时
+间间隔衰减历史信息，并利⽤双向恢复结果互相校正。
+⽅法论：
+从⽅法结构看，BRITS以observedtrajectory为主⼲，利⽤RNNhiddenstate在时间维上传播上下
+⽂，然后让当前时刻的缺失位置借助隐藏状态与最近观测值得到恢复。这个过程对`OM `是明显显式
+的，因为缺失值的恢复直接依赖observedhistory；对`OO`只有弱隐式⽀持，因为observed-
+observed关系只是通过recurrenthiddenstate被压缩进统⼀状态⾥；对`M M `则基本没有单独建
+模，缺失位置之间的关系不会被抽成独⽴机制。
+OO/OM /M M 判断：`BRITS`是⾮常典型的`OM `主导baseline。它确实利⽤了observed
+context，但这种利⽤⽅式主要服务于observed-to-m issing恢复，⽽⾮m issing-sidepattern
+extraction。
+Im puteForm er：OO+OM 联合建模，但M M 仍是隐式
+M otivation：
+
+--- PAGE 5 ---
+Im puteForm er⾯对的问题是，RNN类⽅法对⻓程依赖的表达能⼒不⾜，⽽简单的Transform er直接
+套到缺失场景⼜容易忽略m ask结构和插补任务本⾝的特殊性。因此它要解决的是：如何让时序⻓依
+赖、变量间依赖和缺失恢复在同⼀backbone中协同⼯作。
+创新点：
+它的代表性创新在于将im putation任务与Transform er表征耦合起来，不再把“建模时序”与“恢复
+缺失”分成完全独⽴的两步。相⽐早期⽅法，Im puteForm er更强调时间维与变量维的联合表⽰，以
+及在attention结构中显式保留m ask相关信息，使观测上下⽂可以更稳定地流向待恢复位置。
+⽅法论：
+从结构上看，Im puteForm er的backbone更像unifiedencoder：observedtokens之间通过self-
+attention形成`OO`上下⽂，m issingpositions再通过同⼀表征空间吸收observed信息完成恢复，
+因此它是⽐较典型的`OO+OM `联合⽅法。问题在于，`M M `并没有被单独写出来。m issing
+positions之间即使存在相关性，也只是通过共享self-attention间接传播，没有专⻔的m issing-
+sideprom pt、router或patternexpert。
+`OO/OM /M M `判断：`Im puteForm er`的`OO`与`OM `都较强，但`M M `仍停留在共享
+backbone的隐式传播层⾯，不⾜以⽀撑我们要强调的m issing-m issing专⻔建模。
+FG TI：最接近`M M `动机的⽣成式baseline，但仍未显式专家化
+M otivation：
+FG TI的核⼼出发点是，⾼缺失率、块缺失或复杂缺失模式下，单⼀确定性点估计容易过平滑，也难以
+表达“同⼀observedcontext可能对应多个合理恢复值”的不确定性。它尝试解决的问题不是简单的
+observed-to-m issing回归，⽽是缺失分布本⾝的⽣成式建模。
+创新点：
+它的重要贡献在于把⽣成式恢复或扩散式恢复引⼊时间序列插补，使模型不再只输出⼀个静态点估
+计，⽽是通过逐步去噪或条件⽣成逼近缺失位置的合理分布。相较于纯判别式恢复，这种设计更接近
+我们所说的“不能只靠observedcontext平滑恢复”的动机。
+⽅法论：
+从当前项⽬中的FG TI.py与相关模型实现看，它的恢复流程依赖条件信息、m ask信息以及⽣成式
+denoising过程来重建⽬标位置。这⾥确实开始触及`M M `：因为多个缺失位置之间的相互约束可以在
+同⼀⽣成过程⾥被共同建模，⽽不是逐点独⽴恢复。但需要特别强调的是，`FG TI`的`M M `是“⽣
+成过程隐式产⽣的m issing-sidecoupling”，⽽不是显式的`M M branch`、`M M expertbank`或
+`M M router`。因此它是U nim iss中`M M `设计最强的baseline启发来源，但还不能替代显式
+`M M `模块。
+
+--- PAGE 6 ---
+`OO/OM /M M `判断：`FG TI`对`OM `和`M M `都有帮助，其中对`M M `的启发最⼤；但它的
+`M M `仍然是generativelatentinteraction，⽽不是论⽂级明确拆出的m issing-patternm odule。
+SPIN：典型`OO`强⽅法，辅以m ask-aware初始化
+M otivation：
+SPIN关注的问题是，很多插补⽅法把时序依赖和变量间关系混在⼀个统⼀序列⾥处理，导致空间结构
+或变量拓扑没有得到充分利⽤。它想解决的是：如何把时序传播与变量图传播结合起来，使observed
+context更稳定地⽀撑恢复。
+创新点：
+从项⽬中的`SPIN.py`与`m odels/spin_m odel.py`可以看到，`SPIN`的重要创新包括graph-
+awaretem poralpropagation、m ask-awareinitialization，以及对observed/m issing状态使⽤不
+同嵌⼊。它的重点不是新建m issing-sidepatternbranch，⽽是让observedcontext在图与时序两个
+维度上都被更充分传播。
+⽅法论：
+SPIN通过图结构边连接变量节点，在时间维与空间维进⾏交替传播，并⽤m ask-aware初始化区分
+observed与m issing状态。这个结构对`OO`很强，因为observed-observed关系在tem poral-
+spatialpropagation中被反复强化；对`OM `有⼀定⽀持，因为m issingnode会从observednode
+获得信息；但它依然没有为m issingpositions单独建⽴内部结构抽取模块，因此`M M `基本缺位。
+OO/OM /M M 判断：`SPIN`最适合被归⼊`OO`强baseline。它告诉我们observedcontext应该如
+何更结构化传播，但并没有把m issing-sidepattern写成独⽴主线。
+SAITS：最典型的observed-m issingattention融合⽅法
+M otivation：
+SAITS针对的是⾃回归插补效率低、误差容易逐步累积的问题。它希望把self-attention的并⾏建模
+优势带到插补任务中，并让模型在⼀个统⼀结构⾥同时完成上下⽂建模与缺失恢复。
+创新点：
+SAITS的关键在于采⽤⾃注意⼒模块来替代严格⾃回归链路，并通过针对缺失场景设计的输⼊组织⽅式
+与训练⽬标，使observedtokens可以更直接地为m issingtokens提供信息。相较于RNN系⽅法，
+它的注意⼒传播更全局、更并⾏。
+⽅法论：
+
+--- PAGE 7 ---
+⽅法上，`SAITS`仍然遵循“observedcontext为主、m issingpositions从observedcontext中取
+信息”的基本逻辑。也就是说，它对`OM `建模是明确且强的；对`OO`也有⽀撑，因为observed
+tokens之间通过self-attention建⽴全局依赖；但`M M `仍然没有被拆成单独模块，缺失位置之间如
+果出现相关性，也只是共享attention结构的副产品。
+OO/OM /M M 边界判断：SAITS属于`OM `融合⾮常典型的baseline。它有助于解释whyshared
+attentioncanhelpim putation，但也正因为它把⼀切放进共享注意⼒⾥，所以难以体现m issing-
+sidespecialization。
+Tim esNet：提供周期模式先验，但不是m issing-specific结构
+M otivation：
+Tim esNet要解决的是时间序列中的多周期模式、局部变化与全局变化同时存在，单⼀时域建模很难把
+这些模式拆开。因此它更关注“时间模式本⾝如何表⽰”，⽽不是“缺失关系如何分解”。
+创新点：
+它的代表性创新是把1D时间序列变换到更适合表达周期变化的表⽰空间中，再利⽤多尺度卷积或周期
+建模模块抽取pattern。对插补任务⽽⾔，这类设计的价值在于：如果缺失本⾝带有显著周期性，周期
+backbone可以为恢复提供弱结构先验。
+⽅法论：
+在当前实验设定⾥，`Tim esNet`作为插补baseline时，并不会显式构造`OM `或`M M `路由，⽽是
+把整个序列送⼊⼀个强时间模式提取backbone，再由其输出恢复结果。因此它对`OO`有⼀定⽀
+撑，对`OM `只是间接⽀持，⽽对`M M `的价值主要体现为“周期m issingpattern的弱先验”，⽽
+⾮m issing-sideexplicitinteraction。
+OO/OM /M M 判断：`Tim esNet`不能被写成真正的`M M `⽅法，但它确实提供了U nim iss⾥
+`periodicM M prom ptsource`的局部灵感来源。
+M TSCI：⽣成式⼀致性视⻆下的m issingcoupling
+M otivation：
+M TSCI所⾯对的问题与`FG TI`相近，即单⼀路径、单点预测式恢复在复杂缺失场景下容易不稳定，
+尤其难以处理需要多步修正和全局⼀致性的恢复过程。它试图增强的是“恢复结果的⼀致性与稳定
+性”，⽽不只是⼀次性回归误差。
+创新点：
+从当前项⽬中的`M TSCI.py`、`m odels/m odel.py`与`m odels/m odel_predict_x0.py`可以看到，
+`M TSCI`引⼊了diffusion/denoising-style恢复路径与⼀致性约束，利⽤多种m ask视⻆、条件信息
+
+--- PAGE 8 ---
+和去噪步骤来约束恢复过程。它的重要意义在于提醒我们：m issing-siderelation不⼀定只能靠
+determ inisticattention学到，也可以通过⽣成式⼀致性来间接塑形。
+⽅法论：
+⽅法上，M TSCI通过条件m ask、预测m ask、反向条件m ask等多种视图组织训练过程，在
+denoisingnetwork中逐步恢复⽬标值。这种做法对`OM `有⼀定⽀持，因为observedinform ation
+仍是条件恢复的主要来源；对`M M `也有中等启发，因为多个缺失位置可以在同⼀⽣成/去噪链路中被
+共同约束；但它依然没有像U nim iss那样把`M M `写成显式专家化结构。
+OO/OM /M M 边界判断：`M TSCI`可以被视为“⽣成式⼀致性约束视⻆”的baseline，对`M M `有
+启发但不等于显式`M M `模块。
+Overall：
+• 前⼈⼤多数⽅法仍默认`X_{m iss}`的恢复主要来⾃`X_{obs}`的信息传递，即便backbone形式
+从RNN、Transform er、G raphpropagation变成diffusion或periodicm odeling，这个总假设并
+没有根本改变。因此，`OM `是主线，`OO`是⽀撑，`M M `很少被抬升为headline。
+• 即使`FG TI`、`M TSCI`、`Tim esNet`这类⽅法在⽣成式恢复、周期模式或⼀致性约束层⾯开始
+触及m issing-sidestructure，它们也没有把`M M `拆成显式branch/expert/router。也就是
+说，前⼈会“碰到`M M `”，但不会“把`M M `当成需要专⻔建模的对象”。
+• 在当前常⻅缺失机制设置下，前⼈⼤都采⽤统⼀恢复流程：同⼀套backbone同时处理`M AR/
+M NAR/M ix`。这意味着⽅法不会显式回答“当前应该更依赖`OM `还是`M M `”，更不会设计
+⼀个单独的second-stagem echanism -awareregulation去动态调节两者权重。
+• 前⼈⽅法⼤多仍遵循同⼀条恢复逻辑：先在共享backbone中混合observed-observedcontext
+与observed-to-m issinginteraction，再让m issingpositions从统⼀表征空间中吸收信息；即
+便某些⽅法通过⽣成式恢复、周期先验或⼀致性约束间接触及m issing-sidecoupling，它们也很少
+把MM 提升为⼀个显式、可路由、可解释的核⼼结构模块；更没有在MAR / MNAR / Mix 共
+存时单独回答“当前应更依赖observed-side交互还是m issing-side结构”
+U niM iss的创新恰恰是把这三类信息流重新拆开：OO 不再承担所有恢复责任，也不被写成第三个重
+型expertfam ily，⽽是被保留为foundational context path ，专⻔提供稳定的observed-
+side基础；OM 被重写为interaction-oriented expert branch ，由OM prompt 决定
+应该调⽤哪类observed信息；MM 被显式提升为missing-structure expert branch ，专
+⻔建模co-m issingtopology、periodicevidence与extrem e-eventclue，⽽不再让m issing-side
+pattern仅作为共享backbone或⽣成过程中的隐式副产物；在此基础上，Stage-II 
+mechanism-aware MAR-vs-MNAR soft gate 不再保留第四套独⽴prom ptencoder，⽽是
+由MM prompt 再结合轻量local/globalm issingnesssum m ary派⽣出gate prompt ，据此
+动态调节OM 与MM 的相对权重，⽽不是像前⼈那样沿⽤⼀套静态恢复链路处理所有机制。因此，
+U niM iss的核⼼贡献不是“再增加⼀些experts”，⽽是把缺失插补重写成OO foundational 
+context path + OM/MM dual-core experts + Stage-II mechanism-aware MAR-
+
+--- PAGE 9 ---
+vs-MNAR soft gate 的分层体系，⽤结构分⼯显式回答三个过去常被混写的问题：谁提供稳定上
+下⽂、谁建模不同类型的缺失依赖、以及在MAR 与MNAR 混合场景下模型应当优先依赖哪⼀条路
+径。
+特别提⼀下O-O和O-M 的创新：
+前⼈在O-O上：
+把observed-sidecontext吸收到统⼀backbone⾥，让observedrepresentation⼀边服务⾃⾝编
+码，⼀边同时服务m issingrecovery，OO更像sharedbackground，⽽不是单独被强调的结构⻆⾊
+⽽我们：
+显式的把他单独抽出来，仅负责提取稳定的可观测上下⽂，不是与M issing-sidedecision（决定O-M ）
+混合在⼀起处理！为后续的O-M 和M -M 提供稳定的上下⽂
+U niM iss则先单独保留`OOfoundationalcontextpath`，让模型先回答“observedworld本⾝
+⻓什么样”，再让后续`OM /M M `去决定如何利⽤这份基础上下⽂。
+前⼈在O-M 上：
+前⼈处理observed-to-m issinginteraction，通常是：⽤统⼀attention/cross-attention/shared
+encoder默认observedinform ation会⾃然流向m issingpositions；对所有的缺失位置都⽤同⼀套
+attention计算，导致每个M issingposition从周围observedvalues吸收到的信息是被均匀混合的，
+把所有的observed表征混在⼀起，算⼀组统⼀的权重！
+也就是说，他们不会进⼀步思考：当前缺失位置到底需要哪类可观测的evidence？不同的缺失位置应
+该调⽤不同的可观测上下⽂
+⽽我们U niM iss把O-M 重写成：
+OM evidence-dem andprom pt
+OM router
+OM experts
+也就是说，不⽌是⽤了Experts这么简单，⽽是先思考，当前这个缺失得position需要什么可观测的
+值？再决定：
+是应该更依赖于同变量局部时间？还是跨变量相关，还是说其他的可观测的交互逻辑？
+对于短缺失段，最有价值的证据往往是同变量的局部时间邻域；对于跨变量强耦合的缺失点，更重要
+的是相关变量的同步observedpattern；对于噪声较⼤的observed区域，即使有邻域信息，也需要
+先经过可靠性校准再参与恢复。
+m issingposition先形成⾃⼰的OM prom pt，再由这个prom pt决定应该调⽤哪种observed
+evidenceprocessingstrategy
+不同缺失位置不再被迫共享同⼀套observedinteraction规则，⽽是能够根据⾃⾝需求动态选择更合
+适的observedevidenceexperts
+
+--- PAGE 10 ---
+模块A-OM ，模块A-M M 
+2.1：⽅法论overview（点对点）+模型图
+• 基础输⼊层：将数值，时间，变量，掩码m ask投影到统⼀特征空间，形成融合特征
+• O-O上下⽂主⼲：从融合特征中筛选当前位置及其邻域的Token/Patch；抽取局部波动，跨变量，
+周期等作为O-O_Prom pt；随后使⽤Encoder在Prom pt约束下⽣成稳定的O-OContext
+• O-M 交互专家层：对每个待im putation位置提取局部M ask形态，缺失块统计和邻域可观测的信上
+下⽂息，与O-OContext形成O-M _Prom pt；为该缺失位置聚合与之最相关的observed邻域信息，
+⽽不是直接读取整条共享表征；根据匹配Prom pt和与Obeserved的匹配关系，对每个Experts输出
+软权重；不同Experts分别处理：同变量局部时间，跨变量相关性和可靠性校准；将上述Experts的
+输出按软权重组合⽣成最终的O-M 特征；
+• M -M 缺失结构专家层：从M ask矩阵构造co-m issinggragh，捕获变量之间共同缺失的结构关系；
+从极端值，周期性，缺失拓扑⽣成M -M _Prom pt；根据Prom pt和O-OContext联合语义，对各类
+Experts输出软权重；分别处理拓扑结构，周期性和极值相关的M issingPatterns；输出Z-Z特征；
+• Soft-G ate：直接读取M M _Prom pt，并结合轻量的缺失块统计描述量，投影成为向量G ate；对O-
+M 和M -M 两条核⼼分⽀输出权重，最后在保留O-O的前提下，对M -M 和O-M 进⾏机制感知的动态调
+节；
+每个Expert都类似于lightweightprom pt-conditionedevidenceextractionblocks
+对应设计：
+
+--- PAGE 11 ---
+O-O+O-M +M -M 针对M otivation1设计，实现联合的特征提取建模；对于O-M 和M-M 采⽤Expert架构，
+并考虑到：不同缺失位置对ObservedEvidence和M issing-structure的需求不同
+Soft-G ate对应M otivation2设计，在混合缺失场景下，不同缺失位置所需的恢复依赖不同，针对M AR
+和M NAR进⾏动态调节；
+2.2：⽅法论详述：
+1.输⼊、掩码与模块归属
+设原始时间序列为：
+ X∈RT×D
+其中 为时间⻓度，D为变量数。定义观测掩码：T
+ M∈{0,1}T×D
+其中 表⽰该位置observed，$M _{t,d}=0$表⽰该位置m issing。M  =t,d 1
+基础嵌⼊层写作：
+ H  =0 ϕ(X,M,E  ,E  )t d
+其中：
+•  为tim eem beddingE  
+t
+•  为variableem beddingE  
+d
+•  为value-tim e-m askfusionm oduleϕ(⋅)
+这⼀步只负责把原始输⼊映射到统⼀表征空间。
+为了把⽅法写到论⽂级细度，必须明确每个模块到底是“已有通⽤模块”还是“本⽂创新模块”：
+模块 ⻆⾊ 具体功能 创新归属
+value-time-mask 
+fusion
+基础输⼊层 将数值、时间、变量、
+m ask投影到统⼀特征空
+间
+通⽤模块
+shared observed 
+encoder + OO prompt
+OO 主⼲ 提供带observed-
+patternprom pt的
+observed-only主⼲上下
+⽂
+本⽂在结构⻆⾊上做了重
+构，模块主体仍属基础
+backbone
+OM prompt encoder 
++ OM router + OM 
+experts
+OM 核⼼ 对observed-to-m issing
+交互做prom pt-
+conditionedrouting
+本⽂主创新，借鉴
+Flex-MoE / I2MoE
+
+--- PAGE 12 ---
+MM prompt encoder 
++ MM router + MM 
+experts
+MM 核⼼ 对m issing-side
+topology/extrem e-
+value/periodicpattern
+做prom pt-driven专家化
+建模
+本⽂主创新，借鉴
+Flex-MoE / Time-
+MoE / I2MoE
+mechanism-aware 
+gate head
+StageII 由MM prompt + 
+lightweight 
+missingness summary
+派⽣gateprom pt，并
+对OM / MM 做soft
+regulation
+本⽂主创新，借鉴
+Soft MoE / Lingual-
+SMoE
+branch decoupling 正则层 防⽌OO / OM / MM 表
+征塌缩为同⼀语义空间
+本⽂迁移式创新
+decoder 输出层 将融合表征映射为最终插
+补值
+通⽤输出层
+2.StageI:OOfoundationalbranch
+OO 是foundational context path ，不是heavyweightexpertfam ily；它的创新主要体现
+在structuralrole与pattern-awareobserved-sideanchoring。
+2.1Problem role
+OO 这条路径要解决的不是“如何直接恢复缺失值”，⽽是⼀个更基础的问题：在整条序列已经存在
+缺失噪声的前提下，如何先把observedside本⾝的真实结构组织稳定。如果这⼀步缺失，后续
+`OM `与`M M `两条expertbranches的routing就只能在⼀个被缺失任务污染、被统⼀backbone
+混写的表征空间上做决策，最终会出现两类问题：
+1.OM 会把并不稳定的observedcue当成可靠证据，导致observed-to-m issinginteraction选择失
+真。
+2.MM 会逐渐脱离真实observedcontext，只剩下基于m askpattern的形状匹配，缺乏数据语义约
+束。
+因此，OO 的⽬标是先构造⼀个稳定、低噪声、带pattern-awareness的observedcontext
+anchor。
+2.2:M oduledecom position
+OO foundational context path 建议明确写成下⾯3个连续模块，⽽不是⼀句“使⽤编码器
+提取上下⽂”：
+
+--- PAGE 13 ---
+1.observed token selection
+◦ 从基础融合表征 中筛出当前位置及其邻域的observed-sidetoken/patch；H  
+0
+◦ ⽬的不是重建，⽽是建⽴仅由真实观测值⽀撑的上下⽂基础。
+2.pattern-aware observed context extraction
+◦ 对每个位置抽取局部波动、跨变量相关、周期对⻬等observed-sideprom ptsignal；
+◦ 这些prom ptsignal不是expertrouting信号，⽽是foundationpath的inductivebias。
+3.foundational context encoding
+◦ ⽤共享observedencoder在上述OO prompt 约束下⽣成$z_i^{oo}$；
+◦ 输出只承载稳定的observed-observedcontext，不承担缺失恢复主决策。
+对第 个token/patch的输⼊表征$h_i$，定义foundationalcontextencoder：i
+ z  =ioo E (h  ,p  )oo i ioo
+然后构造OO prompt ：
+ p  =ioo [Δ ;ρ  ;π  ]i i i
+其中：
+•  ：局部波动强度Δ 
+i
+•  ：跨变量相关性摘要ρ  
+i
+•  ：周期对⻬得分π  
+i
+更细地说，建议把这三个量理解为：
+ Δ =i VarPool(N  ), ρ  =itime i CorrPool(N  ), π  =ivar i PeriodScore(N  )itime
+其中 表⽰位置 周围的时间邻域observedwindow，$\m athcal{N}^{var}_i$表⽰与变量
+相关的变量邻域observedwindow。它们的作⽤不是形成新专家，⽽是让OO 编码器显式知道当前
+位置更接近平稳趋势、周期振荡还是局部异常。
+N  
+itime i d  
+i
+这⾥的p_i^{oo} 不是为了形成第三个expertpool，⽽是作为pattern-awareinductivebias，帮
+助OO encoder在observed-onlycontext中更稳定地区分：
+• 平稳趋势
+• 周期波动
+• 局部突变
+• 跨变量同步变化
+这⼀步借鉴TIME-MOE + Moirai-MoE 的不是forecastingdecoder和⼤规模专家池，⽽是：
+• shared + specialized decomposition
+• point / patch level pattern specialization
+
+--- PAGE 14 ---
+• 不同局部时间模式不应共⽤完全同⼀个提取器
+但迁移到U nim iss后，这种思想不会被实现成⼀个独⽴observed-sideexpertfam ily，⽽是收敛为⼀
+个带pattern-awareinductivebias的foundational context path 。因此，OO 的创新边界
+应被写成：
+• not a heavyweight expert family
+• not a plain shared encoder either
+• its novelty lies in structural role and constrained observed-side 
+anchoring
+2.3：Explanationofeverysym bol
+•  ：基础输⼊融合后的统⼀隐藏表征，已经包含数值、时间位置、变量⾝份与m ask状态。H  
+0
+•  ：从 中取出的第 个局部token/patch表征，是OO 路径的直接输⼊。h  
+i H  
+0 i
+•  ：位置 周围的时间邻域observed集合，⽤于估计局部波动与周期性。N  
+itime i
+•  ：与变量 相关的变量邻域observed集合，⽤于估计跨变量同步关系。N  
+ivar d  
+i
+•  ：局部波动强度，反映该位置附近observed序列是平稳还是⾼变化。Δ 
+i
+•  ：跨变量相关性摘要，反映该变量在当前时窗内与其他变量是否存在同步变化。ρ  
+i
+•  ：周期对⻬得分，反映当前位置是否与候选周期结构⼀致。π  
+i
+•  ：由三类observed-sidesignal拼接⽽成的observed-pattern prompt 。p  
+ioo
+•  ：OO foundational encoder ，其职责是把 与 融合成稳定的observed
+contextrepresentation，⽽不是⽣成缺失恢复输出。
+E (⋅)oo h  
+i p  
+ioo
+•  ：第 个位置的observed-observed context anchor ，后续OM / MM 都在其约
+束下⼯作。
+z  
+ioo i
+2.4：W hydoesitworks
+OO 看起来不像⼀个重型模块，但它的有效性恰恰来⾃结构位置正确⽽不是参数复杂度⾼。前⼈⼤多
+数做法把observedcontext直接混进统⼀backbone，于是observed-observedrelation、
+observed-to-m issinginteraction与m issing-sideeffect会在同⼀表征空间⾥纠缠，最终observed
+context很容易被“恢复缺失值”这⼀⽬标稀释。U niM iss则先单独保留`OOfoundational
+contextpath`，让模型先回答“observedworld本⾝⻓什么样”，再让后续`OM /M M `去决定如
+何利⽤这份基础上下⽂。这样做有三个直接收益：第⼀，后续routing始终建⽴在稳定observed
+anchor上，⽽不是建⽴在被缺失噪声污染的混合表征上；第⼆，`OM `在选择observedcue时有了
+明确参考系，不会把⽆关observedpattern误选为恢复证据；第三，`M M `在建模m issing-side
+structure时仍然受到真实观测语义约束，不会退化成只按m ask形状分群。也因此，`OO`的价值不
+在于“它有多复杂”，⽽在于如果没有这条路径，整套模型后续的专家选择就缺少可靠地基。
+
+--- PAGE 15 ---
+2.5：Differencefrom priorOOdesign
+与前⼈最⼤的区别在于：前⼈通常让所有observedpattern被共享backbone隐式混合，OO 只是
+⼀个未被点名的背景；⽽我们明确把OO 留成⼀个独⽴的foundationalpath，使后续OM / MM 的
+重专家位点始终建⽴在稳定context之上，但不把它抬升为第三个核⼼expertfam ily。这正是它“既
+不太弱，也不越位”的原因。
+3.StageI:OM branch
+OM branch的⽬标是显式建模observed-to-m issinginteraction。这⾥必须明确：OM 是⼀个
+expertfam ily，⽽不是⼀个单块attention。
+3.1：Problem role
+OM 要解决的核⼼问题是：对于某⼀个具体缺失位置，模型到底应该从哪些observedcues中取信
+息。这⼀步如果继续沿⽤priorwork中“让m issingtoken从共享backbone⾃然吸收observed
+context”的写法，就会把所有缺失位置都绑定到同⼀套observedaggregation规则上，⽆法区
+分“短gap和⻓gap需要不同线索”“平稳段和异常段需要不同observedevidence”这类关键差
+异。因此，`OM `必须从“共享交互”升级为“条件化选择”。
+3.2：M oduledecom position
+OM interaction-oriented expert branch 建议明确写成下⾯5个连续模块：
+1.OM prompt construction
+◦ 对每个待恢复位置提取局部m ask形态、缺失块统计、邻域observed摘要与来⾃OO 的基础
+上下⽂。
+2.observed candidate summarization
+◦ 为该缺失位置聚合与之最相关的observed邻域信息，⽽不是直接读整条共享表征。
+3.prompt-conditioned router
+◦ 根据OM prompt 与observedanchor的匹配关系，对各个OM experts 输出软权重。
+4.expertized observed interaction
+◦ 不同experts分别处理局部时间传播、跨变量相关和可靠性校准。
+5.branch aggregation
+◦ 将上述experts的输出按软权重组合成最终的$z_i^{om }$。
+对每个待插补位置构造OM prompt ：
+ p  =iom ψ  (m ,r  ,  ,z  )om i i xˉinb ioo
+
+--- PAGE 16 ---
+其中：
+•  为局部m askpatternm 
+i
+•  为缺失块位置、⻓度、邻域统计等prom ptsourcer  
+i
+•  为邻域observedsum m ary
+ xˉinb
+•  为foundationpath输出z  
+ioo
+•  为OM prompt encoder ψ  (⋅)om
+如果要把这⼀步讲清楚，建议把observed邻域摘要显式写成：
+ 
+ =xˉinb Agg({x  ∣j j ∈C  })iobs
+其中 表⽰为缺失位置 检索到的observedcandidateset，Agg 可以是局部均值、加权池化
+或轻量attention，但其⽬的不是替代router，⽽是先给router⼀个可⽤的observedsum m ary。
+C  
+iobs i
+然后构造OM router ：
+ w  =iom Softmax(MLP([p  ;z  ;p  ⊙iom ioo iom z  ]))ioo
+最终OM 表征为：
+ z  =iom
+ w  E  ([p  ;z  ]), K  =
+k=1
+∑
+K  
+om
+i,kom kom iom ioo om 3
+该分⽀明确区别于前⼈的统⼀attention：
+• 前⼈：observedcontext⾃然流向m issingposition
+• 我们：由缺失模式驱动observed-m issinginteractionrouting
+OM 内部不应只写“有experts”，⽽应明确⾄少三类：
+1.local temporal propagation expert
+◦ 恢复同变量局部邻域缺失
+2.cross-variable correlation expert
+◦ 恢复由相关变量⽀撑的m issingtoken
+3.reliability calibration expert
+◦ 对observedcue的可信度做重加权，避免错误传播
+进⼀步解释：
+前两个专家是在回答：从哪⾥借信息来补缺失；
+但是他们都基于⼀个隐含假设：借来的observed信息是可信的，但很有可能信息不可信
+什么时候信息不可信：
+• 邻域本⾝存在剧烈波动：当可观测数值本⾝处在异常波动期时，数值跳来跳去，如果直接⽤它们做
+局部平均来补，则补出来的值会被噪声污染
+
+--- PAGE 17 ---
+• 相关变量处于边缘状态：变量A缺失了，如果想⽤强相关的B变量来im putation，但B变量此时恰好
+处于极端值区间，它和A正常相关关系可能已经失效了
+• 缺失率很⾼的区域：如果⼀个位置周围⼤量邻居缺失，剩下少量的observed代表性很差，直接使⽤
+可能会引⼊偏差
+因此可信专家负责给每条信息打分数，对不可靠的信息降低权重
+这⼀步主要吸收Flex-MoE + I2MoE 的：
+• generalized + specialized router
+• observed context + prompt 联合路由
+• interaction-aware experts
+因此，OM 的创新不是“再做⼀次cross-attention”，⽽是让OM prompt 决定observedcues的
+选择和组合顺序。这样写法更符合正式论⽂⽅法论，也更能体现与BRITS / SAITS / 
+ImputeFormer 这类priorm ethods的边界。
+3.3：Explanationofeverysym bol
+符号解释：
+•  ：当前待恢复的缺失位置索引，可以对应⼀个token、patch或具体时序坐标$(t,d)$。i
+•  ：位置 附近的局部m askpattern，描述该位置是否处于连续缺失块、孤⽴缺失点或混合缺
+失区间。
+m 
+i i
+•  ：缺失块统计描述量，例如块⻓度、起⽌位置、最近观测距离与局部缺失率。r  
+i
+•  ：为缺失位置 检索到的observedcandidate集合，是OM 可以调⽤的原始observed证
+据池。
+C  
+iobs i
+•  ：由 聚合得到的邻域observedsum m ary，表⽰当前位置周围可利⽤的observed
+context摘要。
+ xˉinb C  
+iobs
+•  ：来⾃OO foundational context path 的observed-sideanchor，表⽰在不考虑当
+前缺失需求之前，observed世界本⾝的稳定结构。
+z  
+ioo
+•  ：OM prompt encoder ，⽤于把m ask形态、缺失统计、邻域observed摘要和
+foundationanchor压成统⼀evidence-demand prompt 。
+ψ  (⋅)om
+•  ：第 个缺失位置的OM prompt ，表达“这个位置当前最需要哪类observed证据”。p  
+iom i
+•  ：缺失需求与observedanchor的逐元素交互项，⽤于度量两者在表征空间中的匹配程
+度。
+p  ⊙iom z  
+ioo
+•  ：router⽹络，将联合输⼊映射为expertlogits。MLP(⋅)
+•  ：第 个位置对OM experts 的软分配权重，决定当前缺失位置更依赖哪种observed
+interactionstrategy。
+w  
+iom i
+•  ：OM expert数。K  
+om
+
+--- PAGE 18 ---
+•  ：第 个OM expert ，各⾃学习不同类型的observed-to-m issinginteraction。E  (⋅)kom k
+•  ：OM branch 的最终输出，表⽰经过条件选择和专家聚合后的observed-to-m issing
+interactionrepresentation。
+z  
+iom
+3.4：W hydoesitworks
+OM 的有效性来⾃⼀个⾮常直接但常被priorwork混掉的事实：不是所有observedcues都适合所
+有m issingpositions。对于短缺失段，最有价值的证据往往是同变量的局部时间邻域；对于跨变量
+强耦合的缺失点，更重要的是相关变量的同步observedpattern；对于噪声较⼤的observed区域，
+即使有邻域信息，也需要先经过可靠性校准再参与恢复。共享backbone或统⼀attention的问题在
+于，它默认这些情况都可以⽤同⼀套observedaggregation规则处理，于是“该选哪类observed
+evidence”这⼀决策被平均掉了。U niM iss的`OM `则把这个决策显式化：先⽤$p_i^{om }$描述缺
+失需求，再让router根据$p_i^{om }$与$z_i^{oo}$的匹配关系决定expert权重。这样⼀来，模型不
+是被动等待observed信息⾃然流向m issingposition，⽽是主动判断“当前这个缺失位置最该调⽤哪
+种observedinteraction”。这也是为什么`OM `看起来仍然只是⼀条branch，却⽐genericcross-
+attention更有针对性、更可解释。
+3.5：Differencefrom priorOM design
+前⼈⽅法中的OM 多数是附带交互：observed信息在共享主⼲⾥⾃然传播，m issingposition被动
+接收。我们的OM 则明确改成prompt-conditioned evidence selection ，即先定义缺失
+需求，再做observedcue选择。换⾔之，前⼈是在“让信息流过去”，⽽我们是在“决定哪些信息应
+该流过去、以什么⽅式流过去”。
+4.StageI:M M m issing-structureexpertbranch
+根据最新冻结结构，MM 不再是轻量辅助branch，⽽是第⼆个核⼼expertbranch。它的任务是显式
+建模m issing-sidestructure，尤其服务MNAR 。
+4.1：Problem role
+MM 要解决的问题是：当恢复⽬标本⾝带有强m issing-sidestructure时，模型不能只从observed
+side借信息，⽽必须显式回答m issingpositions彼此之间存在什么结构关系。这⼀点在`M NAR`、
+⻓块缺失、周期性缺失和极值相关缺失场景下尤其重要。若没有`M M `，模型会默认所有恢复都应优
+先依赖`OO+OM `，从⽽把真正有意义的co-m issingtopology、periodicpattern和extrem e-
+eventclue重新压回共享主⼲中的弱先验。
+4.2M oduledecom position
+MM missing-structure expert branch 建议明确写成下⾯5个连续模块：
+1.missing topology construction
+◦ 从m ask矩阵构造co-m issinggraph，捕获变量之间共同缺失的结构关系。
+2.MM prompt construction
+
+--- PAGE 19 ---
+◦ 从极端值线索、周期线索与缺失拓扑中抽取MM prompt 的主结构信号。
+3.MM routing head
+◦ 根据MM prompt 与OO anchor的联合语义，对各类MM experts 输出软权重。
+4.pattern-specialized MM experts
+◦ 分别处理topology、periodic与extrem e-value/anom aly相关的m issingpattern。
+5.amplitude calibration head
+◦ 在MNAR 或极值相关场景下输出幅度校正系数，避免恢复被过度平滑。
+⾸先，从掩码矩阵构建缺失拓扑图：
+ A  =u,vmiss
+ 
+ (1−M  )+ϵ∑t=1
+T t,u
+ (1−M  )(1−M  )∑t=1
+T t,u t,v
+它表⽰变量 与变量 的co-m issing强度。u v
+然后构造三类MM prom ptsource：
+1.topology summary
+◦ 由 聚合得到Amiss
+2.extreme-value clue
+◦ 峰值、⾕值、尖峰、异常波动与幅值突变相关线索
+3.periodic evidence
+◦ 若⼲候选周期下的phaseconsistency/laghit
+先将它们编码为MM prompt ：
+ p  =imm ψ  ([z  ;s  ;s  ;s  ])mm ioo topo ext per
+随后构造MM router ：
+ w  =imm Softmax(MLP  ([p  ;z  ]))mm imm ioo
+再由⼀组m issing-patternexperts聚合：
+ z  =imm
+ w  E  ([z  ;p  ]), K  =
+k=1
+∑
+K  
+mm
+i,kmm kmm ioo imm mm 3
+其中 建议由三类patternspecialists组成：E  (⋅)kmm
+1.topology expert
+
+--- PAGE 20 ---
+◦ 负责co-m issingtopologyencoder
+2.periodic expert
+◦ 负责periodicm em orybank
+3.extreme-value / anomaly-aware expert
+◦ 负责极⼤值、极⼩值、尖峰与异常波动附近的m issingpattern建模
+最后⼀个组件直接回应2026SDM.pdf 第五章“不要把M M ⼜做回平滑attention”的要求。更具体
+地，我们令MM branch额外输出极值放⼤系数：
+ a  =i σ(W  z  )a imm
+使得在MNAR 相关位置上，模型允许⽐普通平滑插补更⼤的偏移幅度。
+这⼀设计直接回扣2026SDM 第五章最关键的态度：发现缺失具有极值性或周期性还不够，必须把这
+些信息真的转成可⽤于插补的结构化信号；否则⽅法本质上仍然是在利⽤observedcontext做平滑
+恢复。
+这⾥借鉴M oE⼯作的细节也要写清：
+• 从Flex-MoE 借来的是“不同组合模式对应不同专家”的思想
+• 从Time-MoE 借来的是“不同时间模式应由不同专家处理”的思想
+• 从I2MoE 借来的是“prom ptsource之间的交互可作为expertselection依据”的思想
+但我们没有照搬任何原论⽂的完整任务设定，⽽是把它们重新组织到missing-side pattern 
+experts 这⼀新语境下。
+4.3：Explanationofeverysym bol
+把关键量说明⽩：
+•  ：变量 与 的co-m issing强度，表⽰两条变量在时间维上共同缺失的相对频率。A  
+u,vmiss u v
+•  ：变量索引，⽽不是时间位置索引。u,v
+•  ：由缺失拓扑图聚合得到的topologysum m ary，反映m issing-side的结构连接模式。s  
+topo
+•  ：extrem e-valueclue，反映当前位置是否靠近峰值、⾕值、尖峰、异常振幅或剧烈波动区
+段。
+s  
+ext
+•  ：periodicevidence，反映缺失分布与候选周期的对⻬程度。s  
+per
+•  ：当前待恢复的位置索引。i
+•  ：来⾃OO foundational context path 的observed-sideanchor，⽤于给m issing-
+side建模提供语义约束。
+z  
+ioo
+
+--- PAGE 21 ---
+•  ：MM prompt encoder ，统⼀编码topology、extrem e-value与periodic线索。ψ  (⋅)mm
+•  ：位置 的MM prompt ，表达“当前m issingposition更像哪⼀种m issing-side
+structure”。
+p  
+imm i
+•  ：位置 对各个MM experts 的软路由权重，决定当前位置更应依赖哪⼀类m issing-
+sidestructure。
+w  
+imm i
+•  ：MM expert数。K  
+mm
+•  ：第 个MM expert ，分别建模topology、periodic或extrem e-value/anom aly
+相关的m issingpattern。
+E  (⋅)kmm k
+•  ：位置 的m issing-structurerepresentation，是m issing-side显式建模的主输出。z  
+imm i
+•  ：极值放⼤系数，⽤于在MNAR 或极值相关缺失场景下避免恢复结果被过度平滑。a  
+i
+•  ：Sigm oid激活，将极值校正项约束在稳定范围内。σ(⋅)
+4.4：W hydoesitworks
+MM 这条分⽀之所以必要，是因为priorwork即使触及m issing-sidecoupling，也⼤多把它放在⽣成
+过程、周期先验或⼀致性正则⾥做隐式建模，结果是模型知道“这⾥可能有m issingpattern”，却没
+有⼀个显式模块去决定哪⼀种m issing-sidestructure才是当前真正有价值的恢复信号。在
+`M NAR`、⻓块缺失、周期性缺失或极值相关缺失场景下，这个缺⼝尤其明显：如果只依赖`OO+
+OM `，模型仍会更倾向于从observedside做平滑恢复，从⽽把真正有意义的m issingtopology、
+extrem e-valueclue与periodicevidence重新抹平。U niM iss将`M M `升成显式`m issing-
+structureexpertbranch`后，m issing-sideinform ation不再是弱先验，⽽是成为可以被编码、被路
+由、被聚合、被校正的主恢复信号之⼀。也因此，`M M `的有效性不在于“我们也加了专家”，⽽在
+于它第⼀次把m issing-sidestructure从辅助背景提升为与`OM `并列的核⼼决策来源。
+4.5：Differencefrom priorM M design
+前⼈如果触及MM ，⼤多是隐式触及：要么在⽣成式恢复⾥让缺失位置共同去噪，要么在周期先验或
+⼀致性项⾥间接约束m issing-siderelation，但很少把MM 明确升级为可编码、可路由、可解释的独
+⽴结构模块。U niM iss的不同点在于：我们不再把m issing-sidepattern当成附带副产物，⽽是把它明
+确重写成missing-structure expert branch ，使其在MNAR 与复杂缺失场景下拥有与
+OM 并列的恢复话语权。
+5：StageI:表征解耦
+为了避免OO / OM / MM 三条分⽀退化到同⼀空间，按照第五章关于contrastivedecoupling的建
+议，引⼊分⽀分离正则。
+定义：
+ L  =sep L  (z ,z )+con oo om L  (z ,z )+con oo mm L  (z ,z )con om mm
+
+--- PAGE 22 ---
+其中 可以采⽤对⽐式分离损失或去相关损失，使MM 不再复制OO 的上下⽂表征。L  
+con
+5.1W hyitworks
+如果没有表征解耦，OO / OM / MM 虽然在结构图上被画成三条分⽀，但在训练后很可能仍然塌缩
+到相近语义空间，最后形成“名义上分⼯、实际上同质”的伪拆分。这样⼀来，OM ⽆法真正学到
+observed-to-m issinginteraction，MM 也⽆法稳定保留m issing-sidestructure，整个架构只是在统
+⼀backbone上挂了⼏个不同名字的头。L_{sep} 的作⽤正是防⽌这种退化：它迫使OO 维持
+observedanchor的⻆⾊，迫使OM 聚焦interaction-specificcues，迫使MM 保留m issing-side
+pattern的专⻔表⽰。也就是说，解耦项不是可有可⽆的辅助正则，⽽是保证三条路径真正分⼯的训练
+约束。
+6：StageII:m echanism -awareM AR-vs-M NARsoftgate
+第⼆阶段是本⽅法的另⼀个核⼼创新。必须明确写成：它就是⼀种  MoE-style gate ，但不是第三
+个  expert family ，本⾝不产⽣新的依赖表征，只负责给  OM / MM 分配软权重。
+6.1：Problem role
+Stage-II 要解决的问题不是“再⽣成⼀条新表征”，⽽是：**当不同位置对应不同缺失机制时，
+模型应当如何动态决定更依赖`OM `还是更依赖`M M `。**如果没有这⼀层，模型就只能对`M AR/
+M NAR/M ix`全部沿⽤同⼀套静态融合规则，最终会把机制差异压平，导致`OM `与`M M `虽然都存
+在，却⽆法在真正需要它们的场景中被正确拉⾼或拉低。
+6.2：M oduledecom position
+Stage-II mechanism-aware MAR-vs-MNAR soft gate 建议明确写成下⾯4个模块：
+1.MM-prompt-to-gate projection
+◦ 直接读取MM prompt ，并结合轻量local/globalm issingnesssum m ary，⽽不是再单独训
+练第四套独⽴prom ptencoder。
+2.gate prompt construction
+◦ 将MM prompt 与缺失统计通过轻量gatehead投影为机制控制向量$p_{i}^{gate}$。
+3.soft gate scoring
+◦ 对OM 与MM 两条核⼼分⽀输出归⼀化软权重。
+4.regulated branch fusion
+◦ 在保留OO foundation的前提下，对OM / MM 做机制感知的动态调节。
+前⼈通常沿⽤统⼀恢复链路，⽽我们不再额外发明⼀套第四prom pt，⽽是直接从MM prompt 派⽣
+gateprom pt：
+
+--- PAGE 23 ---
+ p  =i
+gate ψ  (p  ,r  )gate imm i
+根据该gateprom pt，第⼆阶段不再平均调三条分⽀，⽽是只动态调OM 与MM 的相对权重，OO 
+作为基础上下⽂始终参与。
+6.3：OM -vs-M M softregulation
+ β  ,β  =[ iom imm] Softmax(W  p  )g i
+gate
+其中：
+ β  +iom β  =imm 1
+于是最终融合直接写成：
+ z  =i∗ z  +ioo β  z  +iom iom β  z  
+imm imm
+其直观语义是：
+• 当样本更接近MAR 时，$\beta^{om }_i$更⼤，因此更偏OO + OM 
+• 当样本更接近MNAR 时，$\beta^{m m }_i$更⼤，因此更偏OO + MM 
+• 当样本机制模糊时，OM 与MM 通过softweight连续过渡
+这正对应⽤⼾要求中的第⼆张图：前⼈统⼀处理，⽽我们在第⼆阶段只对MAR 与MNAR 做动态调
+节。
+换句话说，第⼆阶段真正被动态拉⾼和拉低的是OM 与MM 两条核⼼创新分⽀，⽽OO 始终作为基
+础contextpath参与恢复。
+6.4：Explanationofeverysym bol
+为了避免第⼆阶段再次被写成“⼀个抽象gate”，这⾥也要把每个量解释清楚：
+•  ：来⾃MM branch 的m issing-structureprom pt，是第⼆阶段判断机制偏好的主语义来
+源。
+p  
+imm
+•  ：轻量local/globalm issingnesssum m ary，⽤于补充位置级缺失统计。r  
+i
+•  ：gateprom ptencoder，⽤于把MM prompt 与缺失统计映射为机制控制向量。ψ  (⋅)gate
+•  ：位置 的gateprom pt，表达该位置更接近MAR-like 还是MNAR-like 恢复状态。p  
+igate i
+•  ：gate参数矩阵，将机制提⽰映射为OM/MM 两条分⽀的打分。W  
+g
+•  ：对OM 与MM 的软权重，满⾜⼆者和为$1$。β  ,β  
+iom imm
+•  ：融合后的最终主表征，表⽰在OO anchor保持不变的前提下，对OM 与MM 做机制感知调
+节后的恢复表征。
+z  
+i∗
+6.5：W hydoesitworks
+
+--- PAGE 24 ---
+第⼆阶段之所以不能被简化成⼀个静态融合层，是因为真实缺失机制并不会在所有位置上都遵循同⼀
+种dependencypreference。对于更接近MAR 的位置，observed-sideinteraction往往更可信，因
+此模型应更依赖OO + OM ；⽽对于更接近MNAR 、⻓块缺失或带明显m issing-sidestructure的位
+置，真正有价值的信号更多来⾃OO + MM 。如果仍然像priorwork那样⽤⼀套统⼀恢复流程处理
+MAR / MNAR / Mix ，模型就会被迫对所有位置使⽤同⼀组固定融合规则，最终既⽆法充分利⽤
+MM ，也⽆法在MAR-like 区域保持⾜够轻量和稳健。U niM iss的Stage-II mechanism-
+aware MAR-vs-MNAR soft gate 不是单独训练第四套prom pt，⽽是直接从MM prompt 再
+结合轻量m issingnesssum m ary派⽣出gate prompt ，将“当前更像哪种机制”显式写⼊计算
+图，只调OM 与MM 的相对权重，⽽不去重写OO 的基础⻆⾊。这种设计之所以有效，是因为它
+把“不同机制应依赖不同分⽀”从隐式经验变成了可学习、可解释、可视化的显式决策，同时避免了
+prom pt体系被写得过碎。
+6.6：Differencefrom priorm echanism handling
+前⼈常⻅做法是：⽆论缺失位置更接近MAR 、MNAR 还是两者混合，都由同⼀条恢复主⼲统⼀处
+理，最多依赖backbone⾃⼰去“顺带学会”机制差异。U niM iss的不同点在于：我们把机制差异显
+式写成mechanism-aware soft gate ，让模型在OO 不变的前提下，专⻔学习何时应拉⾼
+OM 、何时应拉⾼MM ；但这种gate⼜不是第四类独⽴prom ptfam ily，⽽是由MM prompt 外加
+轻量缺失统计派⽣出来。因此，机制信息不再是隐式噪声，⽽是进⼊了显式决策链，同时⽅法在叙事
+上也⽐“四套完全独⽴prom pt”更克制。
+7：解码器：
+最终重建值为：
+ 
+ =x^i D([z  ;β  ;β  ;a  ])i∗ iom imm i
+其中：
+•  为⼆阶段融合后的主表征z  
+i∗
+•  为branch-levelsoftweightsβ  ,β  
+iom imm
+•  为MM experts 输出的极值放⼤系数a  
+i
+这样设计的⽬的在于让decoder不只是“被动接收⼀个fusedhiddenstate”，⽽是显式知道：
+• 当前更信哪个branch
+• 当前是否应该允许更⼤的MNAR 偏移
+其中decoder只需要完成⼀件事：把OO foundational context path + regulated 
+OM/MM innovation signals 映射回最终插补值，⽽不必再额外引⼊复杂的第三阶段。对于
+MNAR 相关位置，$a_i$可以继续作为幅度校正因⼦参与输出层，以避免极值与周期模式再次被过度
+平滑。
+7.1W hyitworks
+
+--- PAGE 25 ---
+decoder在U niM iss中刻意保持轻量，是因为这套⽅法真正的有效性来⾃前⾯⼏条分⽀的结构分⼯，
+⽽不是把最后⼀层做成新的复杂主⼲。如果decoder过强，它反⽽会重新吞掉OO / OM / MM / 
+gate 已经形成的⻆⾊边界，让模型再次退化为“统⼀隐藏状态->⼤解码器恢复”的prior-style设
+计。当前这种轻量decoder的作⽤是把已经被分⼯清楚的表征映射回数值空间，同时显式看到
+branchsoftweights与极值校正项，因⽽既能保留前⾯结构设计的可解释性，⼜不会把恢复责任重新
+压回最后⼀层。
+8.损失函数
+为了避免损失项看起来像“功能堆叠”，正⽂主损失建议只保留3 项，写成：
+ L=λ  L  +rec rec λ  L  +sep sep λ  L  
+gate gate
+其中：
+• 重建损失
+ L  =rec
+  ∣  −∣Ω∣
+1
+(t,d)∈Ω
+∑ X^t,d X  ∣t,d
+gt
+这⾥ 表⽰评估缺失位置集合。为兼顾MNAR 场景中的极值恢复，可直接在 中使⽤位置权重
+$w_{t,d}$，⽽不再单独拆⼀个第四损失。
+Ω L  
+rec
+• 分⽀分离损失
+ L  =sep L  (z ,z )+con oo om L  (z ,z )+con oo mm L  (z ,z )con om mm
+它服务于第五章强调的decoupling ，确保OO / OM / MM 不是换名字的同⼀表征。
+• 机制调节损失
+ L  =gate −E  [y  logβ  +i imar iom y  logβ  ]imnar imm
+其中 与 并不⼀定需要严格⼈⼯标签，也可以由缺失统计量诱导⽣成弱监督⽬标。它的作
+⽤不是单独提升重建误差，⽽是约束第⼆阶段真的学到OM-vs-MM 的MAR-vs-MNAR 动态偏好。
+y  
+imar y  
+imnar
+这样⼀来，正⽂只保留L_rec + L_sep + L_gate 三项主损失，结构更克制，也更像正式论⽂
+⽅法章节。
+8.1：W hydoesitworks
+损失函数之所以只保留L_rec + L_sep + L_gate 三项，是为了让训练⽬标与⽅法结构⼀⼀对
+应，⽽不是通过堆叠⼤量auxiliarylosses来“补救”结构设计本⾝的不清晰。L_rec 对应最终重建
+质量，保证模型真的把表征转化成更好的恢复结果；L_{sep} 对应branchdecoupling，保证
+OO / OM / MM 的功能分⼯不会在训练中塌缩；L_{gate} 对应m echanism -aware
+regulation，保证第⼆阶段学到的不是任意权重，⽽是与MAR-vs-MNAR 偏好相关的可解释调节。
+也就是说，这三项损失并不是附加修饰，⽽是分别对应“恢复得准、⻆⾊分得开、机制调得对”这三
+个核⼼⽬标。
+2.3：复杂度分析：
+
+--- PAGE 26 ---
+•  ：observedtoken数N  
+obs
+•  ：m issingtoken数N  
+mis
+•  ：隐藏维度d
+•  ：OOencoder层数L  
+oo
+•  ：两类expertfam ily的expert数K  ,K  
+om mm
+•  ：每个m issingtoken在OM 中检索的observedcandidate数C
+•  ：m issingtopology稀疏图中的边数E  
+m
+则主要复杂度可以写为：
+1.OO branch
+ O(L  N  d)+oo obs2 O(N  d )obs 2
+第⼀项来⾃observed-onlycontextencoding，第⼆项来⾃foundationpath中的prom pt-
+conditionedprojection与pattern-awareanchoring。
+2.OM branch
+ O(N  Cd)+mis O(K  N  d )om mis 2
+它主要由局部observedcandidatebank与OM experts构成，因此不需要全局fullattention。
+3.MM branch
+ O(E  d)+m O(K  N  d )mm mis 2
+其中前⼀项来⾃m issingtopologyaggregation，后⼀项来⾃三类M M experts。
+4.Stage-II gate + decoder
+ O(N  d )mis 2
+这⾥之所以没有再额外写⼀项独⽴mechanism prompt encoder 的复杂度，就是因为Stage-
+II 的gate prompt 由MM prompt + r_i 轻量派⽣，只新增⼀个⼩型gate head 。因
+此，若采⽤局部候选集与稀疏m issinggraph，模型的主复杂度仍集中在OO foundation，⽽OM 
+/ MM / gate 的额外代价是可控的。这与“参数量不⼤但结构新颖”的⽬标⼀致。
+2.4：伪代码算法流程：
+代码块
+```text
+Algorithm 1  Unimiss Forward Pass
+Input:
+    time series X, observation mask M
+1
+2
+3
+4
+
+--- PAGE 27 ---
+Output:
+    imputed sequence X_hat
+1:  H0 <- FuseValueTimeMask(X, M, E_t, E_d)
+2:  p_oo_i <- BuildOOPrompt(H0, M)
+3:  z_oo_i <- OOFoundationEncoder(H0_i, p_oo_i)
+4:  For each missing token i do
+5:      C_i_obs <- RetrieveObservedCandidates(H0, M, i)
+6:      x_nb_i <- AggregateObservedSummary(C_i_obs)
+7:      p_om_i <- BuildOMPrompt(m_i, r_i, x_nb_i, z_oo_i)
+8:      w_om_i <- OM_Router(p_om_i, z_oo_i)
+9:      z_om_i <- Sum_k w_om_i[k] * OM_Expert_k(p_om_i, z_oo_i)
+10: End For
+11: [s_topo, s_ext, s_per] <- BuildMissingSidePromptSources(M)
+12: For each missing token i do
+13:     p_mm_i <- BuildMMPrompt(z_oo_i, s_topo, s_ext, s_per)
+14:     w_mm_i <- MM_Router(p_mm_i, z_oo_i)
+15:     z_mm_i <- Sum_k w_mm_i[k] * MM_Expert_k(z_oo_i, p_mm_i)
+16:     p_gate_i <- BuildGatePrompt(p_mm_i, r_i)
+17:     [beta_om_i, beta_mm_i] <- SoftGate(p_gate_i)
+18:     a_i <- ExtremeAmplitudeHead(z_mm_i)
+19:     z_i* <- z_oo_i + beta_om_i * z_om_i + beta_mm_i * z_mm_i
+20:     x_hat_i <- Decoder(z_i*, beta_om_i, beta_mm_i, a_i)
+21: End For
+22: Compute L_rec + L_sep + L_gate
+23: Return X_hat and losses
+```
+2.5：补充：
+1.为什么O-O不和O-M &M -M ⼀样同样设计为Expert架构？
+O-O之所以不采⽤expert架构，是因为它的职责在于提供稳定共享的observedanchor，⽽不是执⾏
+⾼异质、位置敏感的恢复决策。相反，O-M 与M -M 之所以采⽤expert化设计，是因为不同缺失位置
+对observedevidence和m issing-sidestructure的需求本来就不同。
+2.test
+3.Experim ent：
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+
+--- PAGE 28 ---
+3.0：实验设置：
+还是使⽤两个数据集IAQ和ETT；三种缺失率20，30，40；三种机制M AR，M NAR，M ix（视情况⽽
+定，可将M AR结果放⾄附录中）其中M ix的逻辑是先M NAR后M AR
+这次跑三个种⼦3407，3408，3409（取三个种⼦的平均）
+注意实验要记录⽅差：记录m ean± std（以下所有实验都要记录）
+增加M APE指标，删除W asserstein
+注意数据原始M CAR缺失率要调为0，避免出现信息过渡缺失；
+对于M ix的实验设置⽬前来看采⽤对半的缺失率：
+⽐如：⽽且如果两个缺失机制不平衡的话，肯定模型识别能⼒就没什么必要了，⽐如如果MAR占主
+体，那模型针对M NAR的少部分⼏乎⽤M AR来填补也不会有什么问题了
+M ix放在主表，其他两个放在附录
+关于P值statisticalsignificance添加问题；以及M APE指标调整
+M AR应该不⽌局限于变量间，更应该有同⼀变量的可观测导致缺失（可观测导致缺失）
+要思考⼀下，由于我们的G ate_loss，是否在缺失机制的设计上，需要明确标签？
+（初始缺失率调整为0.01，并配置对应模型的标准超参）
+修改：（1）：仿照现有场景，新增M ix场景，即先进⾏M NAR逻辑，再进⾏M AR逻辑；具有20，30，
+40三种缺失率，并且M NAR与M AR对半；（2）实验的五个种⼦改为三个取平均，3407，3408和
+3409；（3）：实验结果要记录⽅差：记录m ean± std，也就是指标结果是有加减⽅差的；（4）：
+增加M APE的m etric指标（M APE不乘100，⽽是按⽐例值输出，所以数值会从原来的“百分⽐量
+级”变成接近0~1的⼩数尺度），删除wasserstein_distance的指标；（5）在tom l⽂件中添加，针对
+IAQ，ETT两个数据集的M ix场景，20，30，40的任务配置（6）删掉physionet和pem s_traffic的相关
+内容，以及m nar_nonuniform 
+FG TI/SPIN/M TSCI修改代码整理----整理完毕所有Baseline----接下来同步开展实验运⾏+模型设计
+3.1：实验主表：
+Datase
+ts
+M issin
+g_rate
+20%-4
+0%
+M etri
+c
+M ean
+
+Heuri
+stic
+BRIT
+S
+2018
+NIPS
+SPIN
+2022
+NIPS
+Tim e
+sNet
+2023I
+CLR
+SAIT
+S
+2023
+ESW
+Im pute
+Form er
+2024KD
+D
+M TSC
+I
+2024C
+IKM 
+FGTI
+2025N
+IPS
+Supe
+r
+Ours
+
+--- PAGE 29 ---
+A
+ETT
+（M AR
+）
+20% RM SE
+M AE
+M RE
+M APE
+30% RM SE
+M AE
+M RE
+M APE
+40% RM SE
+M AE
+M RE
+M APE
+IAQ
+（M AR
+）
+20% RM SE
+M AE
+M RE
+M APE
+30% RM SE
+M AE
+M RE
+M APE
+40% RM SE
+M AE
+M RE
+M APE
+Datase
+ts
+
+M issin
+g_rate
+20%-4
+0%
+M etri
+c
+M ean
+
+Heurist
+ic
+BRIT
+S
+2018
+NIPS
+SPIN
+2022
+NIPS
+Tim e
+sNet
+2023
+ICLR
+SAIT
+S
+2023
+ESW
+A
+Im pute
+Form er
+2024K
+DD
+M TSC
+I
+2024
+CIKM 
+FGTI
+2025NIP
+S
+Supe
+r
+Ours
+
+--- PAGE 30 ---
+ETT
+（M NA
+R_t）
+20% RM S
+E
+M AE
+M RE
+M AP
+E
+ 30% RM S
+E
+M AE
+M RE
+M AP
+E
+ 40% RM S
+E
+M AE
+M RE
+M AP
+E
+IAQ
+（M NA
+R_x）
+20% RM S
+E
+M AE
+M RE
+M AP
+E
+ 30% RM S
+E
+M AE
+M RE
+M AP
+E
+ 40% RM S
+E
+M AE
+M RE
+
+--- PAGE 31 ---
+M AP
+E
+Datase
+ts
+
+M issin
+g_rat
+e
+20%-
+40%
+M etri
+c
+M ean
+
+Heuris
+tic
+BRIT
+S
+2018
+NIPS
+SPIN
+2022
+NIPS
+Tim e
+sNet
+2023
+ICLR
+SAIT
+S
+2023
+ESW
+A
+Im pute
+Form er
+2024KD
+D
+M TSCI
+2024C
+IKM 
+FGTI
+2025NI
+PS
+Supe
+r
+Ours
+ETT
+（M IX
+）
+20% RM S
+E
+M AE
+M RE
+M AP
+E
+ 30% RM S
+E
+M AE
+M RE
+M AP
+E
+ 40% RM S
+E
+M AE
+M RE
+M AP
+E
+IAQ
+（M IX
+）
+20% RM S
+E
+M AE
+M RE
+M AP
+E
+ 30% RM S
+E
+M AE
+
+--- PAGE 32 ---
+M RE
+M AP
+E
+ 40% RM S
+E
+M AE
+M RE
+M AP
+E
+3.2：消融实验：
+保留下⾯4 个主消融：
+1.w/o OO foundation
+◦ 将OO 分⽀退化为普通sharedbackbone，去掉其pattern-aware observed-side 
+anchoring 。
+2.w/o OM interaction routing
+3.w/o MM experts
+4.w/o Stage-II mechanism-aware MAR-vs-MNAR soft gate
+其余组件如graph prior 、periodic evidence encoder 、consistency loss 、
+separation loss 都不再单独抬成“⼤模块”，只作为supportcom ponent或损失项出现。
+3.3：超参数实验：
+建议只保留2-3 组最关键的超参数，避免把实验⾯铺得过宽：
+1.expert number / branch capacity
+◦ 验证OM / MM experts在⼩规模下也有效，⽽不是靠堆很多专家取胜。
+2.gate temperature / softness
+◦ 验证第⼆阶段需要softregulation，⽽不是hardswitching。
+3.MM expert capacity
+◦ 例如pattern-banksize、hiddenwidth或periodicevidenceweight。
+◦ ⽬标是证明MM 不需要做得很⼤也能起作⽤。
+3.4：可视化实验：
+
+--- PAGE 33 ---
+建议在Mix 场景下⾄少保留3 类可视化：
+1.sample-level gate weight distribution
+◦ 展⽰不同样本上\beta^{om} 与\beta^{mm} 的分配差异，并说明OO 始终保留。
+2.MAR-like vs MNAR-like segment case study
+◦ 在同⼀条混合缺失序列中，展⽰更偏MAR 的区段为什么更依赖OO+OM ，更偏MNAR 的区
+段为什么更依赖OO+MM 。
+3.mechanism prompt projection
+◦ 使⽤PCA / t-SNE 或prom pt-scoreplotting展⽰m echanism prom pt与gate输出的对应
+关系。
+这些图的⽬标都只有⼀个：证明第⼆阶段不是⿊箱，⽽是真的在Mix 中学到了MAR-vs-MNAR 的
+局部动态调节。
+3.5：Lightweight&Scalable实验：
+这⼀⼩节不能写成“顺⼿压缩⼀下模型看看⾏不⾏”，⽽要明确回答：U niM iss的有效性究竟来⾃结
+构分⼯，还是主要来⾃更⼤的参数量与更重的计算。如果⼀个⽅法只有在⼤hiddenwidth、⼤
+expert数、复杂gate下才成⽴，那么它更像“⾼容量模型碰巧有效”；相反，如果`OO
+foundationalcontextpath+OM /M M dual-coreexperts+Stage-IIm echanism -awareM AR-vs-
+M NARsoftgate`在轻量配置下仍能稳定保留主要收益，才能证明U niM iss的核⼼价值来⾃
+dependencydecom position本⾝，⽽不是纯粹堆⼤模型。
+建议把Lightweight 版本压成3级配置，⽽不是只给⼀个“tinysetting”：
+1.Lite-S
+◦ 仅保留最⼩OM / MM expert数，例如把K_{om}, K_{mm} 同时减半；
+◦ 将branchhiddenwidth从 压缩到$d/2$；d
+◦ gateM LP从两层改为单层线性映射。
+2.Lite-M
+◦ 保持branch数不变，但共享部分prom ptencoder参数；
+◦ 对OM router 与MM router 采⽤低秩投影或bottleneck映射；
+◦ decoder继续保持轻量，避免把收益重新转移到末端⼤解码器。
+3.Lite-Shared
+◦ 保留OO 不变；
+◦ 将OM / MM 内部部分expert前层共享，仅保留末端specializationhead；
+◦ 验证“共享基础+少量专⻔化”是否已⾜以⽀撑⽅法主收益。
+若把完整模型记为：
+
+--- PAGE 34 ---
+ UniMiss(d,K  ,K  ,d  ),om mm g
+则轻量化版本可写成：
+ UniMiss-Lite(γ  d, γ  K  , γ  K  , γ  d  ),d om om mm mm g g
+其中 分别控制hiddenwidth、OM experts 数、MM experts 数和
+gate容量。这样写的好处是，正⽂⾥可以清楚表达“我们是在系统压缩不同结构位点”，⽽不是含糊
+地说“做⼀个轻量版”。
+γ  ,γ  ,γ  ,γ  ∈d om mm g (0,1]
+评测指标建议同时报告：
+• reconstruction quality ：MAE / RMSE / MRE / MAPE
+• efficiency ：参数量、FLOPs 、G PU m em ory、单batchlatency
+• robustness under compression ：相对fullm odel的性能下降幅度
+• structural retention ：gate分布是否仍能分开MAR-like 与MNAR-like 区域
+⽐较对象建议⾄少包括：
+1.UniMiss-Full
+2.UniMiss-Lite
+3.参数量对⻬的priorbaseline，例如压缩版SAITS / TimesNet / ImputeFormer 
+这⼀组实验真正想验证的不是“谁最⼩”，⽽是三件事：
+1.当K_{om} 与K_{mm} 降低时，性能是否平滑退化，⽽不是⽴即塌缩；
+2.在轻量场景下，Stage-II gate 是否仍然有贡献，说明动态调节不是奢侈模块；
+3.MM 是否在压缩后仍能保住MNAR / Mix 下的关键收益，说明m issing-structurem odeling不
+是可有可⽆的装饰。
+如果结果成⽴，最有⼒的结论应写成：**U niM iss的优势主要来⾃结构化的dependency-aware分
+⼯，因此即使在资源受限配置下，`OO`提供稳定observedanchor、`OM /M M `提供定向
+specializedm odeling、`Stage-II`提供机制感知调节的基本逻辑仍然成⽴。**这会直接增强⽅法
+的deployability叙事，也使论⽂不再显得只适合“⼤模型+⼤算⼒”环境。
+Scalability 不能只理解成“换更⼤数据集试⼀下”，它需要单独验证U niM iss在多种规模轴上
+是否仍保持合理的质量-复杂度折中。对于时序插补⽽⾔，最关键的扩展维度通常不是单⼀的数据量，
+⽽是：时间⻓度更⻓、变量维度更多、缺失率更⾼、缺失块更复杂，以及在这些条件叠加时`OM /
+M M /gate`是否还能维持清晰分⼯。因此，这⼀⼩节的核⼼问题是：U niM iss是否只在当前中等规模
+setting下成⽴，还是能在更难、更⼤、更复杂的im putationregim e中稳定扩展。
+建议⾄少沿下⾯4 条规模轴做系统实验：
+1.temporal scale
+◦ 将序列⻓度从 扩展到$\{2T,4T\}$；T
+
+--- PAGE 35 ---
+◦ 关注OO foundation与OM candidateretrieval在⻓上下⽂下是否仍稳定。
+2.variable scale
+◦ 将变量数从 扩展到更⾼维设定；D
+◦ 关注cross-variablecue增多后，OM 是否更有价值，router是否出现过载。
+3.missing-pattern scale
+◦ 同时提⾼m issingratio、缺失块⻓度与m ixedm echanism com plexity；
+◦ 重点观察MM 与Stage-II gate 是否随着缺失机制复杂化⽽变得更关键。
+4.expert scale
+◦ 改变K_{om}, K_{mm} 或branchcapacity；
+◦ 观察专家数增⼤后是否仍有稳定收益，还是很快进⼊冗余区间。
+结合第6.10 节复杂度分析，这⾥建议把扩展趋势写成“精度曲线+代价曲线”双视⻆，⽽不是只报
+最终精度。对于每⼀条规模轴，都应同步报告：
+• quality trend ：MAE / RMSE 随规模变化的曲线
+• cost trend ：训练时间、推理时间、显存占⽤、吞吐变化
+• routing trend ：OM / MM 使⽤频率、gateweight分布、expertutilization
+• stability trend ：不同seed下⽅差是否显著扩⼤
+M ix下不同的混合探索
+4.写作：
+相关⼯作中可以将⽤M AR来评估M NAR的部分也提出来
+
