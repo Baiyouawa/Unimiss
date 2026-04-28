@@ -271,6 +271,6 @@ outputs/unimiss/<experiment_group>/<dataset>/<mask_type_or_mix_ratio>/mr_<missin
 - `Baseline/README.md`：baseline 侧说明
 - `Ours/README.md`：Ours 快速入口说明
 - `docs/unimiss_code_guide_zh.md`：Ours 深度解读
-- `baseline_review_zh.md`：baseline 综述性中文文档
+- 根目录的 `baseline_review_zh.md`：baseline 综述性中文文档
 
 如果后续要做主实验、消融、可视化或论文写作，优先以 `pixi.toml`、`Ours/run.py` 和 `docs/unimiss_code_guide_zh.md` 为准。
