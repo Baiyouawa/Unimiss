@@ -452,7 +452,7 @@ def build_parser() -> argparse.ArgumentParser:
                         help="MAR fraction in mix scenario: 0.2=MNAR-dominant, 0.5=balanced, 0.8=MAR-dominant")
     parser.add_argument("--prep_n_steps", type=int, default=48)
     parser.add_argument("--cuda_device", type=int, default=None)
-    parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--epochs", type=int, default=40)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight_decay", type=float, default=1e-5)
