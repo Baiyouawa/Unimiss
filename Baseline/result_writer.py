@@ -18,8 +18,8 @@ def write_result_md(
     agg : dict
         聚合结果字典，需包含以下键：
         - dataset, mask_type, missing_rate, seeds
-        - mae / rmse / mre / mape / n_points（各含 mean, std, display）
-        - runs: list[dict]，每个元素含 seed, mae, rmse, mre, mape, n_points
+        - mae / rmse / mre / nrmse / n_points（各含 mean, std, display）
+        - runs: list[dict]，每个元素含 seed, mae, rmse, mre, nrmse, n_points
     result_path : str | Path | None
         结果文件路径，默认为当前脚本所在目录下的 result.md。
     """
@@ -44,71 +44,33 @@ def write_result_md(
         f"## {model_name} | {dataset} | {mask_type} | Missing Rate: {missing_rate}\n"
     )
     lines.append(f"> Recorded at: {timestamp}\n")
-    has_robust = "mape_capped" in runs[0]
-
-    if has_robust:
-        lines.append("| Seed | MAE | RMSE | MRE | MAPE | MAPE_cap | MAPE_trim | sMAPE | Outlier% | Points |")
-        lines.append("|:----:|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|:------:|")
-    else:
-        lines.append("| Seed | MAE | RMSE | MRE | MAPE | Eval Points |")
-        lines.append("|:----:|:-------:|:-------:|:-------:|:-------:|:-----------:|")
+    lines.append("| Seed | MAE | RMSE | MRE | NRMSE | Eval Points |")
+    lines.append("|:----:|:-------:|:-------:|:-------:|:-------:|:-----------:|")
 
     for run in runs:
-        if has_robust:
-            lines.append(
-                f"| {run['seed']} "
-                f"| {run['mae']:.6f} "
-                f"| {run['rmse']:.6f} "
-                f"| {run['mre']:.6f} "
-                f"| {run['mape']:.6f} "
-                f"| {run['mape_capped']:.6f} "
-                f"| {run['mape_trimmed']:.6f} "
-                f"| {run['smape']:.6f} "
-                f"| {run['mape_outlier_ratio']:.4f} "
-                f"| {int(run['n_points'])} |"
-            )
-        else:
-            lines.append(
-                f"| {run['seed']} "
-                f"| {run['mae']:.6f} "
-                f"| {run['rmse']:.6f} "
-                f"| {run['mre']:.6f} "
-                f"| {run['mape']:.6f} "
-                f"| {int(run['n_points'])} |"
-            )
+        lines.append(
+            f"| {run['seed']} "
+            f"| {run['mae']:.6f} "
+            f"| {run['rmse']:.6f} "
+            f"| {run['mre']:.6f} "
+            f"| {run['nrmse']:.6f} "
+            f"| {int(run['n_points'])} |"
+        )
 
     a_mae = agg["mae"]
     a_rmse = agg["rmse"]
     a_mre = agg["mre"]
-    a_mape = agg["mape"]
+    a_nrmse = agg["nrmse"]
     a_np = agg["n_points"]
 
-    if has_robust:
-        a_mc = agg["mape_capped"]
-        a_mt = agg["mape_trimmed"]
-        a_sm = agg["smape"]
-        a_or = agg["mape_outlier_ratio"]
-        lines.append(
-            f"| **Mean±Std** "
-            f"| **{a_mae['mean']:.6f}±{a_mae['std']:.6f}** "
-            f"| **{a_rmse['mean']:.6f}±{a_rmse['std']:.6f}** "
-            f"| **{a_mre['mean']:.6f}±{a_mre['std']:.6f}** "
-            f"| **{a_mape['mean']:.6f}±{a_mape['std']:.6f}** "
-            f"| **{a_mc['mean']:.6f}±{a_mc['std']:.6f}** "
-            f"| **{a_mt['mean']:.6f}±{a_mt['std']:.6f}** "
-            f"| **{a_sm['mean']:.6f}±{a_sm['std']:.6f}** "
-            f"| **{a_or['mean']:.4f}±{a_or['std']:.4f}** "
-            f"| **{a_np['mean']:.0f}±{a_np['std']:.0f}** |"
-        )
-    else:
-        lines.append(
-            f"| **Mean±Std** "
-            f"| **{a_mae['mean']:.6f}±{a_mae['std']:.6f}** "
-            f"| **{a_rmse['mean']:.6f}±{a_rmse['std']:.6f}** "
-            f"| **{a_mre['mean']:.6f}±{a_mre['std']:.6f}** "
-            f"| **{a_mape['mean']:.6f}±{a_mape['std']:.6f}** "
-            f"| **{a_np['mean']:.0f}±{a_np['std']:.0f}** |"
-        )
+    lines.append(
+        f"| **Mean±Std** "
+        f"| **{a_mae['mean']:.6f}±{a_mae['std']:.6f}** "
+        f"| **{a_rmse['mean']:.6f}±{a_rmse['std']:.6f}** "
+        f"| **{a_mre['mean']:.6f}±{a_mre['std']:.6f}** "
+        f"| **{a_nrmse['mean']:.6f}±{a_nrmse['std']:.6f}** "
+        f"| **{a_np['mean']:.0f}±{a_np['std']:.0f}** |"
+    )
 
     lines.append("\n---\n")
 

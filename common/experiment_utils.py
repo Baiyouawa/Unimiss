@@ -40,9 +40,19 @@ def set_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATA_ROOT = PROJECT_ROOT / "Data"
+
+
 def ensure_cache_dir() -> Path:
-    cache_dir = Path(__file__).resolve().parent.parent / "Datasets"
+    cache_dir = DATA_ROOT
     cache_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        import tsdb.data_processing as tsdb_data_processing
+
+        tsdb_data_processing.CACHED_DATASET_DIR = str(cache_dir.resolve())
+    except Exception:
+        pass
     return cache_dir.resolve()
 
 
@@ -242,14 +252,13 @@ def summarize_metrics(
     imputation_array: np.ndarray,
     gt_array: np.ndarray,
     mask: np.ndarray,
-    *,
-    mape_cap: float = 10.0,
-    mape_trim_ratio: float = 0.05,
 ) -> dict:
     _EMPTY = {
-        "mae": 0.0, "rmse": 0.0, "mre": 0.0,
-        "mape": 0.0, "mape_capped": 0.0, "mape_trimmed": 0.0, "smape": 0.0,
-        "mape_outlier_ratio": 0.0, "n_points": 0,
+        "mae": 0.0,
+        "rmse": 0.0,
+        "mre": 0.0,
+        "nrmse": 0.0,
+        "n_points": 0,
     }
     gt = np.nan_to_num(gt_array)
     pred = np.nan_to_num(imputation_array)
@@ -267,38 +276,14 @@ def summarize_metrics(
     eps = 1e-8
     mean_gt = float(np.mean(np.abs(masked_gt)))
     mre = float(mae / max(mean_gt, eps))
-
-    abs_gt = np.abs(masked_gt)
-    point_denom = np.maximum(abs_gt, eps)
-    per_point_ape = abs_diff / point_denom
-
-    mape = float(np.mean(per_point_ape))
-
-    capped_ape = np.minimum(per_point_ape, mape_cap)
-    mape_capped = float(np.mean(capped_ape))
-
-    if n_points >= 20:
-        k = max(1, int(np.ceil(n_points * mape_trim_ratio)))
-        sorted_ape = np.sort(per_point_ape)
-        mape_trimmed = float(np.mean(sorted_ape[:-k]))
-    else:
-        mape_trimmed = mape
-
-    smape_denom = np.maximum(np.abs(masked_pred) + abs_gt, eps)
-    smape = float(np.mean(2.0 * abs_diff / smape_denom))
-
-    gt_threshold = max(mean_gt * 0.01, eps)
-    mape_outlier_ratio = float(np.mean(abs_gt < gt_threshold))
+    rms_gt = float(np.sqrt(np.mean(masked_gt ** 2)))
+    nrmse = float(rmse / max(rms_gt, eps))
 
     return {
         "mae": mae,
         "rmse": rmse,
         "mre": mre,
-        "mape": mape,
-        "mape_capped": mape_capped,
-        "mape_trimmed": mape_trimmed,
-        "smape": smape,
-        "mape_outlier_ratio": mape_outlier_ratio,
+        "nrmse": nrmse,
         "n_points": n_points,
     }
 
@@ -363,14 +348,8 @@ def append_result_markdown(result_path: Path | str, title: str, payload: dict) -
     )
     lines.append(
         f"- mae: `{payload['mae']['display']}` | rmse: `{payload['rmse']['display']}` | "
-        f"mre: `{payload['mre']['display']}` | mape: `{payload['mape']['display']}`"
+        f"mre: `{payload['mre']['display']}` | nrmse: `{payload['nrmse']['display']}`"
     )
-    if "mape_capped" in payload:
-        lines.append(
-            f"- mape_capped: `{payload['mape_capped']['display']}` | "
-            f"mape_trimmed: `{payload['mape_trimmed']['display']}` | "
-            f"smape: `{payload['smape']['display']}`"
-        )
     lines.append(
         f"- params: `{payload.get('param_count', 0)}` total / `{payload.get('trainable_param_count', 0)}` trainable"
     )

@@ -15,11 +15,12 @@ for extra_path in [PROJECT_ROOT, BASELINE_ROOT]:
     if str(extra_path) not in sys.path:
         sys.path.append(str(extra_path))
 
-from benchpots.datasets import preprocess_ett, preprocess_italy_air_quality  # noqa: E402
 from common.experiment_utils import (  # noqa: E402
     MISSING_LABEL_MAR,
     MISSING_LABEL_MNAR,
     apply_mask_with_labels,
+    load_main_dataset,
+    summarize_metrics,
 )
 from models.unimiss_model import UniMissModel  # noqa: E402
 from pygrinder import calc_missing_rate  # noqa: E402
@@ -39,73 +40,12 @@ def set_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
-def summarize_metrics(
-    imputation_array: np.ndarray,
-    gt_array: np.ndarray,
-    mask: np.ndarray,
-    *,
-    mape_cap: float = 10.0,
-    mape_trim_ratio: float = 0.05,
-) -> dict:
-    gt = np.nan_to_num(gt_array)
-    pred = np.nan_to_num(imputation_array)
-    n_points = int(mask.sum())
-    if n_points == 0:
-        return {
-            "mae": 0.0, "rmse": 0.0, "mre": 0.0,
-            "mape": 0.0, "mape_capped": 0.0, "mape_trimmed": 0.0, "smape": 0.0,
-            "mape_outlier_ratio": 0.0, "n_points": 0,
-        }
-    masked_gt = gt[mask]
-    masked_pred = pred[mask]
-    diff = masked_pred - masked_gt
-    abs_diff = np.abs(diff)
-    mae = float(np.mean(abs_diff))
-    rmse = float(np.sqrt(np.mean(diff ** 2)))
-    eps = 1e-8
-    mean_gt = float(np.mean(np.abs(masked_gt)))
-    mre = float(mae / max(mean_gt, eps))
-    abs_gt = np.abs(masked_gt)
-    point_denom = np.maximum(abs_gt, eps)
-    per_point_ape = abs_diff / point_denom
-    mape = float(np.mean(per_point_ape))
-    capped_ape = np.minimum(per_point_ape, mape_cap)
-    mape_capped = float(np.mean(capped_ape))
-    if n_points >= 20:
-        k = max(1, int(np.ceil(n_points * mape_trim_ratio)))
-        sorted_ape = np.sort(per_point_ape)
-        mape_trimmed = float(np.mean(sorted_ape[:-k]))
-    else:
-        mape_trimmed = mape
-    smape_denom = np.maximum(np.abs(masked_pred) + abs_gt, eps)
-    smape = float(np.mean(2.0 * abs_diff / smape_denom))
-    gt_threshold = max(mean_gt * 0.01, eps)
-    mape_outlier_ratio = float(np.mean(abs_gt < gt_threshold))
-    return {
-        "mae": mae,
-        "rmse": rmse,
-        "mre": mre,
-        "mape": mape,
-        "mape_capped": mape_capped,
-        "mape_trimmed": mape_trimmed,
-        "smape": smape,
-        "mape_outlier_ratio": mape_outlier_ratio,
-        "n_points": n_points,
-    }
-
-
 def parse_seeds(seed_arg: str) -> list[int]:
     return [int(s.strip()) for s in seed_arg.split(",") if s.strip()]
 
 
 def load_dataset(dataset_name: str, prep_n_steps: int) -> dict:
-    cache_dir = (PROJECT_ROOT / "Datasets").resolve()
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    if dataset_name == "electricity_transformer_temperature":
-        return preprocess_ett(subset="ETTm2", rate=0.01, n_steps=prep_n_steps, pattern="point")
-    if dataset_name == "italy_air_quality":
-        return preprocess_italy_air_quality(rate=0.01, n_steps=prep_n_steps, pattern="point")
-    raise ValueError(f"Unknown dataset: {dataset_name}")
+    return load_main_dataset(dataset_name, prep_n_steps)
 
 
 class SequenceDataset(Dataset):
@@ -294,7 +234,7 @@ def train_one_seed(
     if args.experiment_group == "param_count":
         counts = count_parameters(model)
         save_json(seed_dir / "param_count.json", counts)
-        return {"seed": seed, "mae": 0.0, "rmse": 0.0, "mre": 0.0, "mape": 0.0, "mape_capped": 0.0, "mape_trimmed": 0.0, "smape": 0.0, "mape_outlier_ratio": 0.0, "n_points": 0}
+        return {"seed": seed, "mae": 0.0, "rmse": 0.0, "mre": 0.0, "nrmse": 0.0, "n_points": 0}
 
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False)
@@ -486,11 +426,7 @@ def aggregate_runs(args: argparse.Namespace, runs: list[dict], output_dir: Path)
         "mae": stat("mae"),
         "rmse": stat("rmse"),
         "mre": stat("mre"),
-        "mape": stat("mape"),
-        "mape_capped": stat("mape_capped"),
-        "mape_trimmed": stat("mape_trimmed"),
-        "smape": stat("smape"),
-        "mape_outlier_ratio": stat("mape_outlier_ratio"),
+        "nrmse": stat("nrmse"),
         "n_points": stat("n_points"),
         "train_time_sec": stat("train_time_sec") if "train_time_sec" in runs[0] else None,
         "infer_time_sec": stat("infer_time_sec") if "infer_time_sec" in runs[0] else None,

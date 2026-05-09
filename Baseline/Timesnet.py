@@ -9,10 +9,14 @@ import numpy as np
 import torch
 from result_writer import write_result_md
 from pygrinder import mar_logistic, mnar_x, mnar_t, calc_missing_rate
-from benchpots.datasets import preprocess_ett, preprocess_italy_air_quality
 from pypots.imputation import TimesNet
-import tsdb
 import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from common.experiment_utils import load_main_dataset, summarize_metrics  # noqa: E402
 
 
 def set_seed(seed: int):
@@ -23,60 +27,6 @@ def set_seed(seed: int):
         torch.cuda.manual_seed_all(seed)
 
 
-def summarize_metrics(
-    imputation_array: np.ndarray,
-    gt_array: np.ndarray,
-    mask: np.ndarray,
-    *,
-    mape_cap: float = 10.0,
-    mape_trim_ratio: float = 0.05,
-) -> dict:
-    """计算在掩码位置上的指标."""
-    gt = np.nan_to_num(gt_array)
-    pred = np.nan_to_num(imputation_array)
-    n_points = int(mask.sum())
-    if n_points == 0:
-        return {
-            "mae": 0.0, "rmse": 0.0, "mre": 0.0,
-            "mape": 0.0, "mape_capped": 0.0, "mape_trimmed": 0.0, "smape": 0.0,
-            "mape_outlier_ratio": 0.0, "n_points": 0,
-        }
-    masked_gt = gt[mask]
-    masked_pred = pred[mask]
-    diff = masked_pred - masked_gt
-    abs_diff = np.abs(diff)
-    mae = float(np.mean(abs_diff))
-    rmse = float(np.sqrt(np.mean(diff ** 2)))
-    eps = 1e-8
-    mean_gt = float(np.mean(np.abs(masked_gt)))
-    mre = float(mae / max(mean_gt, eps))
-    abs_gt = np.abs(masked_gt)
-    point_denom = np.maximum(abs_gt, eps)
-    per_point_ape = abs_diff / point_denom
-    mape = float(np.mean(per_point_ape))
-    capped_ape = np.minimum(per_point_ape, mape_cap)
-    mape_capped = float(np.mean(capped_ape))
-    if n_points >= 20:
-        k = max(1, int(np.ceil(n_points * mape_trim_ratio)))
-        sorted_ape = np.sort(per_point_ape)
-        mape_trimmed = float(np.mean(sorted_ape[:-k]))
-    else:
-        mape_trimmed = mape
-    smape_denom = np.maximum(np.abs(masked_pred) + abs_gt, eps)
-    smape = float(np.mean(2.0 * abs_diff / smape_denom))
-    gt_threshold = max(mean_gt * 0.01, eps)
-    mape_outlier_ratio = float(np.mean(abs_gt < gt_threshold))
-    return {
-        "mae": mae,
-        "rmse": rmse,
-        "mre": mre,
-        "mape": mape,
-        "mape_capped": mape_capped,
-        "mape_trimmed": mape_trimmed,
-        "smape": smape,
-        "mape_outlier_ratio": mape_outlier_ratio,
-        "n_points": n_points,
-    }
 
 
 parser = argparse.ArgumentParser()
@@ -126,15 +76,8 @@ if cuda_device is not None:
 
 # 数据准备
 DATASET_NAME = args.dataset
-cache_dir = (Path(__file__).resolve().parent.parent / "Datasets").resolve()
-cache_dir.mkdir(parents=True, exist_ok=True)
 prep_n_steps = args.prep_n_steps
-if DATASET_NAME == "electricity_transformer_temperature":
-    data = preprocess_ett(subset="ETTm2", rate=0.01, n_steps=prep_n_steps, pattern="point")
-elif DATASET_NAME == "italy_air_quality":
-    data = preprocess_italy_air_quality(rate=0.01, n_steps=prep_n_steps, pattern="point")
-else:
-    raise ValueError(f"未知数据集 {DATASET_NAME}")
+data = load_main_dataset(DATASET_NAME, prep_n_steps)
 train_X_raw, val_X_raw, test_X_raw = data["train_X"], data["val_X"], data["test_X"]
 
 print(f"Base missing rate train: {calc_missing_rate(train_X_raw):.2%}")
@@ -345,7 +288,7 @@ for seed in run_seeds:
     all_metrics.append(metric_values)
 
     print(f"MRE on masked ground truth (seed {seed}): {metric_values['mre']:.6f}")
-    print(f"MAPE on masked ground truth (seed {seed}): {metric_values['mape']:.6f}")
+    print(f"NRMSE on masked ground truth (seed {seed}): {metric_values['nrmse']:.6f}")
     print(f"MAE on masked ground truth (seed {seed}): {metric_values['mae']:.6f}")
     print(f"RMSE on masked ground truth (seed {seed}): {metric_values['rmse']:.6f}")
     print(f"Evaluated points (seed {seed}): {metric_values['n_points']}")
@@ -360,18 +303,14 @@ for seed in run_seeds:
 agg_mae = aggregate_metric("mae")
 agg_rmse = aggregate_metric("rmse")
 agg_mre = aggregate_metric("mre")
-agg_mape = aggregate_metric("mape")
-agg_mape_capped = aggregate_metric("mape_capped")
-agg_mape_trimmed = aggregate_metric("mape_trimmed")
-agg_smape = aggregate_metric("smape")
-agg_mape_outlier = aggregate_metric("mape_outlier_ratio")
+agg_nrmse = aggregate_metric("nrmse")
 agg_n_points = aggregate_metric("n_points")
 
 print("\n===== Aggregated over seeds =====")
 print(f"MAE : {agg_mae['display']}")
 print(f"RMSE: {agg_rmse['display']}")
 print(f"MRE : {agg_mre['display']}")
-print(f"MAPE: {agg_mape['display']}")
+print(f"NRMSE: {agg_nrmse['display']}")
 print(f"Evaluated points: {agg_n_points['display']}")
 
 agg = {
@@ -382,11 +321,7 @@ agg = {
     "mae": agg_mae,
     "rmse": agg_rmse,
     "mre": agg_mre,
-    "mape": agg_mape,
-    "mape_capped": agg_mape_capped,
-    "mape_trimmed": agg_mape_trimmed,
-    "smape": agg_smape,
-    "mape_outlier_ratio": agg_mape_outlier,
+    "nrmse": agg_nrmse,
     "n_points": agg_n_points,
     "runs": all_metrics,
 }

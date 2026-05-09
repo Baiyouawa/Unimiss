@@ -13,7 +13,7 @@
 - 缺失率：`20% / 30% / 40%`
 - `Mix` 场景：先施加 `MNAR`，再施加 `MAR`，两者对半
 - 随机种子：`3407 / 3408 / 3409`
-- 指标：`RMSE / MAE / MRE / MAPE`
+- 指标：`RMSE / MAE / MRE / NRMSE`
 - 主表 baseline：`Mean / BRITS / SPIN / TimesNet / SAITS / ImputeFormer / MTSCI / FGTI / Ours`
 
 同时，稿件还明确提示了若干收敛方向：
