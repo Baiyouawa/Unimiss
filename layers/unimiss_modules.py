@@ -272,8 +272,19 @@ class StageIIGate(nn.Module):
         missing_density: torch.Tensor,
         global_missing_rate: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        global_feat = global_missing_rate.unsqueeze(1).unsqueeze(2).expand_as(missing_density)
-        gate_in = torch.cat([p_mm, missing_density.unsqueeze(-1), global_feat.unsqueeze(-1)], dim=-1)
+        # Align density features to p_mm shape [B, T, N, D] for stable concatenation.
+        if missing_density.ndim == 2:  # [B, T]
+            missing_density = missing_density.unsqueeze(-1).unsqueeze(-1)  # [B, T, 1, 1]
+        elif missing_density.ndim == 3:  # [B, T, N]
+            missing_density = missing_density.unsqueeze(-1)  # [B, T, N, 1]
+        elif missing_density.ndim != 4:
+            raise ValueError(f"unexpected missing_density ndim={missing_density.ndim}")
+
+        if missing_density.size(-2) == 1 and p_mm.size(-2) != 1:
+            missing_density = missing_density.expand(-1, -1, p_mm.size(-2), -1)
+
+        global_feat = global_missing_rate.view(-1, *([1] * (p_mm.ndim - 1))).expand(*p_mm.shape[:-1], 1)
+        gate_in = torch.cat([p_mm, missing_density, global_feat], dim=-1)
         gate_prompt = self.prompt_head(gate_in)
         beta = torch.softmax(self.score(gate_prompt) / max(self.temperature, 1e-6), dim=-1)
         return gate_prompt, beta[..., 0], beta[..., 1]
