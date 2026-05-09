@@ -548,63 +548,24 @@ cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_
 cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group main --run_name full"
 
 # ================================================================
-# OURS: ABLATION — mix scenario, both datasets, all missing rates
+# OURS: ABLATION — IAQ only, mix scenario, missing_rate=0.4
 # ================================================================
-# ETT ablation: mix × {0.2, 0.3, 0.4} × {no_oo, no_om, no_mm, no_gate}
-[tasks.abl-ett-20-no-oo]
-cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_oo --no-use-oo"
-[tasks.abl-ett-20-no-om]
-cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_om --no-use-om"
-[tasks.abl-ett-20-no-mm]
-cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_mm --no-use-mm"
-[tasks.abl-ett-20-no-gate]
-cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_gate --no-use-stage2-gate"
-
-[tasks.abl-ett-30-no-oo]
-cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_oo --no-use-oo"
-[tasks.abl-ett-30-no-om]
-cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_om --no-use-om"
-[tasks.abl-ett-30-no-mm]
-cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_mm --no-use-mm"
-[tasks.abl-ett-30-no-gate]
-cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_gate --no-use-stage2-gate"
-
-[tasks.abl-ett-40-no-oo]
-cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_oo --no-use-oo"
-[tasks.abl-ett-40-no-om]
-cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_om --no-use-om"
-[tasks.abl-ett-40-no-mm]
-cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_mm --no-use-mm"
-[tasks.abl-ett-40-no-gate]
-cmd = "python Ours/run.py --dataset electricity_transformer_temperature --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_gate --no-use-stage2-gate"
-
-# IAQ ablation: mix × {0.2, 0.3, 0.4} × {no_oo, no_om, no_mm, no_gate}
-[tasks.abl-italy-20-no-oo]
-cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_oo --no-use-oo"
-[tasks.abl-italy-20-no-om]
-cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_om --no-use-om"
-[tasks.abl-italy-20-no-mm]
-cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_mm --no-use-mm"
-[tasks.abl-italy-20-no-gate]
-cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group ablation --run_name no_gate --no-use-stage2-gate"
-
-[tasks.abl-italy-30-no-oo]
-cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_oo --no-use-oo"
-[tasks.abl-italy-30-no-om]
-cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_om --no-use-om"
-[tasks.abl-italy-30-no-mm]
-cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_mm --no-use-mm"
-[tasks.abl-italy-30-no-gate]
-cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group ablation --run_name no_gate --no-use-stage2-gate"
-
-[tasks.abl-italy-40-no-oo]
+[tasks.abl-iaq-mix40-no-oo]
 cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_oo --no-use-oo"
-[tasks.abl-italy-40-no-om]
+[tasks.abl-iaq-mix40-no-om]
 cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_om --no-use-om"
-[tasks.abl-italy-40-no-mm]
+[tasks.abl-iaq-mix40-no-mm]
 cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_mm --no-use-mm"
-[tasks.abl-italy-40-no-gate]
+[tasks.abl-iaq-mix40-no-gate]
 cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name no_gate --no-use-stage2-gate"
+[tasks.abl-iaq-mix40-only-oo]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name only_oo --no-use-om --no-use-mm --no-use-stage2-gate --lambda_gate 0 --no-use-sep-loss"
+[tasks.abl-iaq-mix40-oo-om]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name oo_om --no-use-mm --no-use-stage2-gate --lambda_gate 0"
+[tasks.abl-iaq-mix40-oo-om-mm]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name oo_om_mm --no-use-stage2-gate --lambda_gate 0"
+[tasks.abl-iaq-mix40-oo-om-mm-gate]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.4 --experiment_group ablation --run_name oo_om_mm_gate"
 
 # ================================================================
 # OURS: HYPERPARAMETER — ETT & IAQ, mix/0.2
@@ -632,6 +593,16 @@ cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_
 cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name gate_temp_05 --gate_temperature 0.5"
 [tasks.hparam-italy-period-48]
 cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.2 --experiment_group hyperparameter --run_name period_48 --period_len 48"
+
+# n_heads sweep (default d_model=192 is divisible by 4,8,12,16); aligns with hyperparameter/.../mr_0.3/
+[tasks.hparam-italy-nheads-4]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group hyperparameter --run_name nheads_4 --n_heads 4"
+[tasks.hparam-italy-nheads-8]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group hyperparameter --run_name nheads_8 --n_heads 8"
+[tasks.hparam-italy-nheads-12]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group hyperparameter --run_name nheads_12 --n_heads 12"
+[tasks.hparam-italy-nheads-16]
+cmd = "python Ours/run.py --dataset italy_air_quality --mask_type mix --missing_rate 0.3 --experiment_group hyperparameter --run_name nheads_16 --n_heads 16"
 
 # ================================================================
 # OURS: VISUALIZATION — both datasets
@@ -744,14 +715,10 @@ depends-on = [
 # --- All ablation ---
 [tasks.batch-ablation]
 cmd = "echo '[batch] All ablation experiments complete'"
-description = "Full ablation grid: ETT+IAQ × mix × {0.2,0.3,0.4} × {no_oo,no_om,no_mm,no_gate}"
+description = "IAQ-only ablation grid: mix × mr=0.4"
 depends-on = [
-    "abl-ett-20-no-oo", "abl-ett-20-no-om", "abl-ett-20-no-mm", "abl-ett-20-no-gate",
-    "abl-ett-30-no-oo", "abl-ett-30-no-om", "abl-ett-30-no-mm", "abl-ett-30-no-gate",
-    "abl-ett-40-no-oo", "abl-ett-40-no-om", "abl-ett-40-no-mm", "abl-ett-40-no-gate",
-    "abl-italy-20-no-oo", "abl-italy-20-no-om", "abl-italy-20-no-mm", "abl-italy-20-no-gate",
-    "abl-italy-30-no-oo", "abl-italy-30-no-om", "abl-italy-30-no-mm", "abl-italy-30-no-gate",
-    "abl-italy-40-no-oo", "abl-italy-40-no-om", "abl-italy-40-no-mm", "abl-italy-40-no-gate",
+    "abl-iaq-mix40-no-oo", "abl-iaq-mix40-no-om", "abl-iaq-mix40-no-mm", "abl-iaq-mix40-no-gate",
+    "abl-iaq-mix40-only-oo", "abl-iaq-mix40-oo-om", "abl-iaq-mix40-oo-om-mm", "abl-iaq-mix40-oo-om-mm-gate",
 ]
 
 # --- All hyperparameter ---
@@ -763,6 +730,14 @@ depends-on = [
     "hparam-ett-gate-temp-01", "hparam-ett-gate-temp-05", "hparam-ett-gate-temp-20",
     "hparam-ett-period-12", "hparam-ett-period-48",
     "hparam-italy-dmodel-128", "hparam-italy-gate-temp-05", "hparam-italy-period-48",
+]
+
+[tasks.batch-hparam-italy-nheads]
+cmd = "echo '[batch] Italy n_heads {4,8,12,16} sweep complete'"
+description = "IAQ mix mr=0.3: n_heads ablation (d_model default 192)"
+depends-on = [
+    "hparam-italy-nheads-4", "hparam-italy-nheads-8",
+    "hparam-italy-nheads-12", "hparam-italy-nheads-16",
 ]
 
 # --- All scaling ---
