@@ -356,7 +356,9 @@ def evaluate_mtsci(
         return t
 
     model.eval()
-    batch_metrics = []
+    all_gt = []
+    all_imputed = []
+    all_eval_mask = []
     total_eval_points = 0
     with torch.no_grad():
         for batch in data_loader:
@@ -388,15 +390,17 @@ def evaluate_mtsci(
             imputed_np = imputed_data.cpu().numpy()
             eval_np = evalmask.cpu().numpy().astype(bool)
             total_eval_points += int(eval_np.sum())
-            batch_metrics.append(summarize_metrics(imputed_np, gt_np, eval_np))
+            all_gt.append(gt_np)
+            all_imputed.append(imputed_np)
+            all_eval_mask.append(eval_np)
 
     if total_eval_points == 0:
         raise RuntimeError("MTSCI evaluate_mtsci: eval mask has 0 points, please check masking pipeline.")
 
-    return {
-        k: float(np.mean([m[k] for m in batch_metrics]))
-        for k in ["mae", "rmse", "mre", "nrmse", "n_points"]
-    }
+    gt_all = np.concatenate(all_gt, axis=0)
+    imputed_all = np.concatenate(all_imputed, axis=0)
+    eval_mask_all = np.concatenate(all_eval_mask, axis=0)
+    return summarize_metrics(imputed_all, gt_all, eval_mask_all)
 
 
 run_seeds = [3407, 3408, 3409]

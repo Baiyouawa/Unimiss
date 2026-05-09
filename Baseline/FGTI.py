@@ -385,7 +385,10 @@ for seed in run_seeds:
 
     # 推理
     model.eval()
-    batch_metrics = []
+    all_gt = []
+    all_imputed = []
+    all_eval_mask = []
+    total_eval_points = 0
     with torch.no_grad():
         for observed_data, observed_dataf, observed_mask, observed_tp, gt_mask, orig_data in test_loader:
             observed_data = observed_data.to(cfg.device)
@@ -444,12 +447,19 @@ for seed in run_seeds:
                     "eval_true": int(eval_np.sum()),
                 },
             )
-            batch_metrics.append(summarize_metrics(imputed_np, gt_np, eval_np))
+            total_eval_points += int(eval_np.sum())
+            all_gt.append(gt_np)
+            all_imputed.append(imputed_np)
+            all_eval_mask.append(eval_np)
+
+    if total_eval_points == 0:
+        raise RuntimeError("FGTI evaluate: eval mask has 0 points, please check masking pipeline.")
 
     # 聚合
-    seed_metrics = {
-        k: float(np.mean([m[k] for m in batch_metrics])) for k in ["mae", "rmse", "mre", "nrmse", "n_points"]
-    }
+    gt_all = np.concatenate(all_gt, axis=0)
+    imputed_all = np.concatenate(all_imputed, axis=0)
+    eval_mask_all = np.concatenate(all_eval_mask, axis=0)
+    seed_metrics = summarize_metrics(imputed_all, gt_all, eval_mask_all)
     seed_metrics["seed"] = seed
     all_metrics.append(seed_metrics)
     print(

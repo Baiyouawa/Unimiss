@@ -217,7 +217,9 @@ def evaluate_model(
     edge_index: torch.Tensor,
 ) -> dict:
     model.eval()
-    batch_metrics = []
+    all_gt = []
+    all_imputed = []
+    all_mask = []
     total_points = 0
     with torch.no_grad():
         for observed, obs_mask, orig_data, orig_mask in data_loader:
@@ -239,15 +241,17 @@ def evaluate_model(
             imputed_np = imputed.cpu().numpy()
             mask_np = target_mask.cpu().numpy().astype(bool)
             total_points += int(mask_np.sum())
-            batch_metrics.append(summarize_metrics(imputed_np, gt_np, mask_np))
+            all_gt.append(gt_np)
+            all_imputed.append(imputed_np)
+            all_mask.append(mask_np)
 
     if total_points == 0:
         raise RuntimeError("SPIN evaluate_model: target eval points are 0, please check masking pipeline.")
 
-    return {
-        k: float(np.mean([m[k] for m in batch_metrics]))
-        for k in ["mae", "rmse", "mre", "nrmse", "n_points"]
-    }
+    gt_all = np.concatenate(all_gt, axis=0)
+    imputed_all = np.concatenate(all_imputed, axis=0)
+    mask_all = np.concatenate(all_mask, axis=0)
+    return summarize_metrics(imputed_all, gt_all, mask_all)
 
 
 def aggregate_metric(all_metrics: list[dict], metric_name: str) -> dict:
@@ -278,8 +282,8 @@ def main():
     parser.add_argument("--mar_ratio", type=float, default=0.5, help="MAR fraction in mix scenario")
     parser.add_argument("--prep_n_steps", type=int, default=48)
     parser.add_argument("--cuda_device", type=int, default=None)
-    parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--batch_size", type=int, default=16)
+    parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--hidden_size", type=int, default=48)
     parser.add_argument("--n_layers", type=int, default=4)
