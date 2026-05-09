@@ -17,7 +17,7 @@ class UniMissModel(nn.Module):
     def __init__(
         self,
         n_features: int,
-        d_model: int = 192,
+        d_model: int = 256,
         n_heads: int = 8,
         n_layers: int = 4,
         d_ff: int = 256,
